@@ -22,5 +22,5 @@ abstracted_app=app: [Name=string]: pkg_app.#AppConfig & {
 }
 
 for k, v in abstracted_app {
-	appObjects: "\(k)": (pkg_app.#App & {#config: v}).outObjects
+	appObjects: "\(k)": (pkg_app.#App & {config: v}).outObjects
 }

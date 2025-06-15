@@ -63,7 +63,7 @@ import (
 }
 
 #App: {
-	c=#config: #AppConfig
+	c=config: #AppConfig
 
 	// k8s objects in format Kind: Namespace: Name: {}
 	objects: [string]: [string]: [string]: k8s.#Object
