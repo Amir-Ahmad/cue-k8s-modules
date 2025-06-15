@@ -16,6 +16,9 @@ import (
 	metadata: k8s.#Metadata
 	pod:      #PodConfig
 	selectorLabels: [string]: string
+
+	// set spec of controller directly
+	spec: {...}
 }
 
 #Controller: {
@@ -30,37 +33,22 @@ import (
 
 #DeploymentConfig: {
 	#ControllerCommon
-
-	// set spec of Deployment
-	spec: {...}
 }
 
 #DaemonSetConfig: {
 	#ControllerCommon
-
-	// set spec of Daemonset
-	spec: {...}
 }
 
 #StatefulSetConfig: {
 	#ControllerCommon
-
-	// set spec of StatefulSet
-	spec: {...}
 }
 
 #CronJobConfig: {
 	#ControllerCommon
-
-	// Set spec of CronJob
-	spec: {...}
 }
 
 #JobConfig: {
 	#ControllerCommon
-
-	// Set spec of Job
-	spec: {...}
 }
 
 #Deployment: {
