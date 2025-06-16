@@ -7,7 +7,6 @@
 set -euo pipefail
 
 DISABLE_CLEANUP="${DISABLE_CLEANUP:-"false"}"
-module_root="$(git rev-parse --show-toplevel)/app"
 tmp_dir="$(mktemp -d -t timoni.XXXXXX)"
 
 echo "Temporary directory: ${tmp_dir}"
@@ -19,23 +18,35 @@ fi
 setup_timoni(){
   dest="${1}"
 
+  repo_root="$(git rev-parse --show-toplevel)"
+  module_root="${repo_root}/app"
+
   if [ ! -d "${dest}" ]; then
     echo "destination directory ${dest} doesn't exist"
     return 1
   fi
 
-  mkdir "${dest}/app"
+  mkdir "${dest}/app" "${dest}/cue.mod" "${dest}/k8s-schema"
 
   find "${module_root}" -maxdepth 1 -name '*.cue' -exec cp "{}" "${dest}/app" \;
 
-  cp -r "${module_root}/cue.mod" "${dest}"
   cp -r "${module_root}/k8s" "${dest}"
+
+  find "${dest}/app" -name '*.cue' -exec sed -i "s|cue-k8s-modules/app/k8s|cue-k8s-modules/k8s|" "{}" \;
+
+  # copy the whole k8s-schema module to avoid dependency on cue modules.
+  cp -r "${repo_root}/k8s-schema/pkg" "${dest}/k8s-schema/"
+
+  cat > "${dest}/cue.mod/module.cue" <<'EOF'
+module: "github.com/amir-ahmad/cue-k8s-modules"
+language: version: "v0.12.0"
+EOF
 
   cat > "${dest}/timoni.cue" <<'EOF'
 package main
 
 import (
-	"github.com/amir-ahmad/cue-k8s-modules/app/app"
+	"github.com/amir-ahmad/cue-k8s-modules/app"
 )
 
 // Schema for user-supplied values.
