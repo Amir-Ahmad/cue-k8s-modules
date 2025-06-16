@@ -4,6 +4,7 @@
 # example:
 # ./scripts/timoni.sh mod vet .
 # ./scripts/timoni.sh build app -f values.cue .
+# ./scripts/timoni.sh mod push . oci://ghcr.io/amir-ahmad/cue-k8s-modules/timoni-app --version "0.0.1-dev"
 set -euo pipefail
 
 DISABLE_CLEANUP="${DISABLE_CLEANUP:-"false"}"
