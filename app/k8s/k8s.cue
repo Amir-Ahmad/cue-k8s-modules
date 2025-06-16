@@ -1,12 +1,12 @@
 package k8s
 
 import (
-	apps_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/k8s.io/api/apps/v1"
-	core_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/k8s.io/api/core/v1"
-	net_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/k8s.io/api/networking/v1"
-	batch_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/k8s.io/api/batch/v1"
-	storage_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/k8s.io/api/storage/v1"
-	meta_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/k8s.io/apimachinery/pkg/apis/meta/v1"
+	apps_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/apps/v1"
+	core_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/core/v1"
+	net_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/networking/v1"
+	batch_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/batch/v1"
+	storage_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/storage/v1"
+	meta_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 #StatefulSet: apps_v1.#StatefulSet & {
