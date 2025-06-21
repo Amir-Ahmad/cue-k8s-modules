@@ -1,0 +1,88 @@
+name: Tag Release
+
+on:
+  push:
+    tags:
+      - '*-*.*.*'  # Matches patterns like "module1-0.1.1"
+
+jobs:
+  publish-module:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup CUE
+        uses: cue-lang/setup-cue@v1.0.1
+        with:
+          version: 'v0.13.1'
+
+      - name: Parse tag and extract module info
+        id: parse-tag
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+
+          # Extract module name and version from tag (e.g., "my-module-0.1.1")
+          # Version pattern: semantic version (x.y.z with optional pre-release/build metadata)
+          if [[ $TAG_NAME =~ ^(.+)-([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
+            MODULE_NAME="${BASH_REMATCH[1]}"
+            VERSION="${BASH_REMATCH[2]}"
+          else
+            echo "Error: Tag format should be 'module-version' (e.g., 'my-module-0.1.1')"
+            exit 1
+          fi
+
+          # Verify module directory exists
+          if [ ! -d "$MODULE_NAME" ]; then
+            echo "Error: Module directory '$MODULE_NAME' does not exist"
+            exit 1
+          fi
+
+          # Check if module has Timoni setup
+          if [ -f "$MODULE_NAME/scripts/setup-timoni.sh" ]; then
+            IS_TIMONI="true"
+          else
+            IS_TIMONI="false"
+          fi
+
+          echo "module=$MODULE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "is-timoni=$IS_TIMONI" >> $GITHUB_OUTPUT
+
+          echo "Parsed tag: $TAG_NAME"
+          echo "Module: $MODULE_NAME"
+          echo "Version: $VERSION"
+          echo "Is Timoni: $IS_TIMONI"
+
+      - name: Validate module before publishing
+        uses: ./.github/actions/validate-modules
+        with:
+          module: ${{ steps.parse-tag.outputs.module }}
+          is-timoni: ${{ steps.parse-tag.outputs.is-timoni }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Timoni for publishing
+        if: steps.parse-tag.outputs.is-timoni == 'true'
+        uses: stefanprodan/timoni/actions/setup@main
+        with:
+          version: 0.25.1
+
+      - name: Publish module to registry
+        env:
+          CUE_REGISTRY: 'github.com/${{ github.repository_owner }}=ghcr.io'
+        run: |
+          cd ${{ steps.parse-tag.outputs.module }}
+          echo "Publishing module: ${{ steps.parse-tag.outputs.module }} version v${{ steps.parse-tag.outputs.version }}"
+          cue mod publish v${{ steps.parse-tag.outputs.version }}
+
+      - name: Publish to Timoni
+        if: steps.parse-tag.outputs.is-timoni == 'true'
+        run: |
+          ${{ steps.parse-tag.outputs.module }}/scripts/setup-timoni.sh "${{ runner.temp }}/timoni"
+          timoni mod publish "${{ runner.temp }}/timoni" "${{ steps.parse-tag.outputs.version }}"
