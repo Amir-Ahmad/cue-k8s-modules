@@ -53,4 +53,5 @@ jobs:
         uses: ./.github/actions/validate-modules
         with:
           module: ${{ matrix.module }}
-          has-timoni: ${{ hashFiles(format('{0}/scripts/setup-timoni.sh', matrix.module)) != '' }}
+          is-timoni: ${{ hashFiles(format('{0}/scripts/timoni-setup.sh', matrix.module)) != '' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
