@@ -75,3 +75,27 @@ jobs:
           timoni mod push ${{ runner.temp }}/timoni \
             oci://ghcr.io/amir-ahmad/cue-k8s-modules/timoni-${{ steps.parse-tag.outputs.module }} \
             --version "${{ steps.parse-tag.outputs.version }}"
+
+      - name: Create summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Module published 🎉
+
+          ## 📋 Details
+          - **Module:** `${{ steps.parse-tag.outputs.module }}`
+          - **Version:** `v${{ steps.parse-tag.outputs.version }}`
+
+          ### CUE Module
+          ```
+          ghcr.io/amir-ahmad/cue-k8s-modules/${{ steps.parse-tag.outputs.module }}:v${{ steps.parse-tag.outputs.version }}
+          ```
+          EOF
+
+          if [[ "${{ steps.parse-tag.outputs.is-timoni }}" == "true" ]]; then
+            cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ### Timoni Module
+          ```
+          oci://ghcr.io/amir-ahmad/cue-k8s-modules/timoni-${{ steps.parse-tag.outputs.module }}:${{ steps.parse-tag.outputs.version }}
+          ```
+          EOF
+          fi
