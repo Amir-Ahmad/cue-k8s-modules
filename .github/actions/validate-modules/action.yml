@@ -1,0 +1,53 @@
+name: 'Validate CUE Modules'
+description: 'Validates CUE modules and Timoni configurations'
+
+inputs:
+  module:
+    description: 'Module name to validate'
+    required: true
+  is-timoni:
+    description: 'Whether this module is also a timoni module'
+    required: false
+    default: 'false'
+  github-token:
+    description: 'GitHub token for ghcr authentication'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup CUE
+      uses: cue-lang/setup-cue@v1.0.1
+      with:
+        version: 'v0.13.1'
+
+    - name: Setup Timoni
+      if: inputs.is-timoni == 'true'
+      uses: stefanprodan/timoni/actions/setup@main
+      with:
+        version: 0.25.1
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.github-token }}
+
+    - name: Validate CUE module
+      shell: bash
+      env:
+        CUE_REGISTRY: 'github.com/amir-ahmad=ghcr.io'
+      run: |
+        cd ${{ inputs.module }}
+        echo "Validating CUE module: ${{ inputs.module }}"
+        cue vet -c ./...
+
+    - name: Validate Timoni module
+      if: inputs.is-timoni == 'true'
+      shell: bash
+      run: |
+        echo "Setting up and validating Timoni module for: ${{ inputs.module }}"
+        mkdir -p "${{ runner.temp }}/timoni"
+        ${{ inputs.module }}/scripts/timoni-setup.sh "${{ runner.temp }}/timoni"
+        timoni mod vet "${{ runner.temp }}/timoni"

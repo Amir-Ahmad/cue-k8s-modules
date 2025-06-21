@@ -1,0 +1,57 @@
+name: Module Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-modules: ${{ steps.changes.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed modules
+        id: changes
+        run: |
+          # Get list of changed files based on trigger type
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            changed_files=$(git diff --name-only origin/main...HEAD)
+          else
+            changed_files=$(git diff --name-only HEAD~1 HEAD)
+          fi
+
+          # Extract unique module directories
+          modules=$(echo "$changed_files" | grep -E '^[^/]+/' | cut -d'/' -f1 | sort -u | grep -v '^\.github' || true)
+
+          # Convert to JSON array
+          if [ -n "$modules" ]; then
+            modules_json=$(echo "$modules" | jq -R -s -c 'split("\n")[:-1]')
+          else
+            modules_json="[]"
+          fi
+
+          echo "modules=$modules_json" >> $GITHUB_OUTPUT
+          echo "Changed modules: $modules_json"
+
+  validate-modules:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed-modules != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJson(needs.detect-changes.outputs.changed-modules) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate module
+        uses: ./.github/actions/validate-modules
+        with:
+          module: ${{ matrix.module }}
+          is-timoni: ${{ hashFiles(format('{0}/scripts/timoni-setup.sh', matrix.module)) != '' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
