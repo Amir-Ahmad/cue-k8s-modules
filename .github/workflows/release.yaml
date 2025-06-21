@@ -38,7 +38,7 @@ jobs:
           fi
 
           # Check if module has Timoni setup
-          if [ -f "$MODULE_NAME/scripts/setup-timoni.sh" ]; then
+          if [ -f "$MODULE_NAME/scripts/timoni-setup.sh" ]; then
             IS_TIMONI="true"
           else
             IS_TIMONI="false"
@@ -59,6 +59,13 @@ jobs:
         with:
           module: ${{ steps.parse-tag.outputs.module }}
           is-timoni: ${{ steps.parse-tag.outputs.is-timoni }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Timoni for publishing
+        if: steps.parse-tag.outputs.is-timoni == 'true'
+        uses: stefanprodan/timoni/actions/setup@main
+        with:
+          version: 0.25.1
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -67,15 +74,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Timoni for publishing
-        if: steps.parse-tag.outputs.is-timoni == 'true'
-        uses: stefanprodan/timoni/actions/setup@main
-        with:
-          version: 0.25.1
-
       - name: Publish module to registry
         env:
-          CUE_REGISTRY: 'github.com/${{ github.repository_owner }}=ghcr.io'
+          CUE_REGISTRY: 'github.com/amir-ahmad=ghcr.io'
         run: |
           cd ${{ steps.parse-tag.outputs.module }}
           echo "Publishing module: ${{ steps.parse-tag.outputs.module }} version v${{ steps.parse-tag.outputs.version }}"
@@ -84,5 +85,6 @@ jobs:
       - name: Publish to Timoni
         if: steps.parse-tag.outputs.is-timoni == 'true'
         run: |
-          ${{ steps.parse-tag.outputs.module }}/scripts/setup-timoni.sh "${{ runner.temp }}/timoni"
+          mkdir -p "${{ runner.temp }}/timoni"
+          ${{ steps.parse-tag.outputs.module }}/scripts/timoni-setup.sh "${{ runner.temp }}/timoni"
           timoni mod publish "${{ runner.temp }}/timoni" "${{ steps.parse-tag.outputs.version }}"
