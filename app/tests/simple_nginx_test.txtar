@@ -1,0 +1,67 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden/nginx.yaml
+
+-- apps/nginx.cue --
+package app
+
+#App & {config: {
+	name: "nginx"
+	common: namespace: "default"
+
+	controller: nginx: {
+		type: "Deployment"
+		pod: image: "nginx:latest"
+		pod: ports: http: port: 8080
+		spec: replicas: 1
+	}
+}}
+
+-- golden/nginx.yaml --
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nginx
+    namespace: default
+    labels:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/component: nginx
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: nginx
+        app.kubernetes.io/component: nginx
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: nginx
+          app.kubernetes.io/component: nginx
+        annotations: {}
+      spec:
+        containers:
+          - name: nginx
+            image: nginx:latest
+            ports:
+              - name: http
+                containerPort: 8080
+                protocol: TCP
+            env: []
+            imagePullPolicy: Always
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: nginx
+    namespace: default
+    labels:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/component: nginx
+  spec:
+    ports:
+      - name: http
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/component: nginx
+    type: ClusterIP
