@@ -1,0 +1,233 @@
+# test the multi-app-package example
+cd examples/multi-app-package
+
+exec cue cmd dump ./apps/...
+cmp stdout $WORK/golden.yaml
+
+-- golden.yaml --
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: foobar
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+data:
+  FOO: BAR
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: first
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: first
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: foobar
+      app.kubernetes.io/component: first
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: foobar
+        app.kubernetes.io/component: first
+        config/foobar/checksum: bW+slY5Hn17Ai0wSD6V7fTGSj8XnQ5+T1wGIqr0A2Pg=
+      annotations: {}
+    spec:
+      containers:
+        - name: first
+          image: foobar:latest
+          ports:
+            - name: http
+              containerPort: 5050
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Australia/Sydney
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foo-third
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: foo-third
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: foobar
+      app.kubernetes.io/component: foo-third
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: foobar
+        app.kubernetes.io/component: foo-third
+      annotations: {}
+    spec:
+      containers:
+        - name: foo-third
+          image: third:latest
+          ports:
+            - name: http
+              hostPort: 80
+              containerPort: 7070
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Australia/Sydney
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: foo-sts
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: foo-sts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: foobar
+      app.kubernetes.io/component: foo-sts
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: foobar
+        app.kubernetes.io/component: foo-sts
+      annotations: {}
+    spec:
+      containers:
+        - name: foo-sts
+          image: second:latest
+          ports:
+            - name: http
+              containerPort: 6060
+              protocol: TCP
+          env:
+            - name: TZ
+              value: Australia/Sydney
+          imagePullPolicy: Always
+  serviceName: foo-sts
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: foo-cronjob
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: foo-cronjob
+spec:
+  schedule: '*/15 * * * *'
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: foobar
+            app.kubernetes.io/component: foo-cronjob
+          annotations: {}
+        spec:
+          containers:
+            - name: foo-cronjob
+              image: cronjob:v1
+              env:
+                - name: TZ
+                  value: Australia/Sydney
+              imagePullPolicy: IfNotPresent
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: foo-job
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: foo-job
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: foobar
+        app.kubernetes.io/component: foo-job
+      annotations: {}
+    spec:
+      containers:
+        - name: foo-job
+          image: job:v1
+          env:
+            - name: TZ
+              value: Australia/Sydney
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: first
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: first
+spec:
+  ports:
+    - name: http
+      port: 5050
+      protocol: TCP
+      targetPort: 5050
+  selector:
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: first
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo-sts
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: foo-sts
+spec:
+  ports:
+    - name: http
+      port: 6060
+      protocol: TCP
+      targetPort: 6060
+      nodePort: 30000
+  selector:
+    app.kubernetes.io/name: foobar
+    app.kubernetes.io/component: foo-sts
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: foo-pvc
+  namespace: default
+  labels:
+    TEST: TEST_BAR
+    app.kubernetes.io/name: foobar
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10gb
+  storageClassName: local
+
