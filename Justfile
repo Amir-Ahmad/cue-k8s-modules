@@ -3,5 +3,9 @@
     just --list
 
 # Run tests
-test:
-    cd {{justfile_directory()}}/test && go test -v -count=1 ./...
+test *args:
+    cd {{justfile_directory()}}/test && gotestsum -f testname -- ./... -count=1 {{args}}
+
+# Run tests with verbose output
+test-verbose *args:
+    cd {{justfile_directory()}}/test && gotestsum -f standard-verbose -- ./... -v -count=1 {{args}}

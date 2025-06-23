@@ -122,9 +122,11 @@ import (
 
 	out: k8s.#Job & {
 		metadata: c.metadata
-		spec: template: {
-			metadata: labels: c.pod.labels
-			#Pod & {#config: c.pod}
+		spec: {
+			template: {
+				metadata: labels: c.pod.labels
+				#Pod & {#config: c.pod}
+			}
 		} & c.spec
 	}
 }
