@@ -1,0 +1,63 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/migration.cue --
+package app
+
+#App & {config: {
+	name: "migration"
+	common: namespace: "default"
+
+	controller: migration: {
+		type: "Job"
+		pod: {
+			image: "migrate/migrate:v4.16.2"
+			command: ["migrate", "-path", "/migrations", "-database", "postgres://..."]
+			env: {
+				DATABASE_URL: "postgres://user:pass@postgres:5432/db"
+				MIGRATION_PATH: "/migrations"
+			}
+		}
+		spec: {
+			completions: 1
+			parallelism: 1
+			backoffLimit: 3
+		}
+	}
+}}
+
+-- golden.yaml --
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: migration
+    namespace: default
+    labels:
+      app.kubernetes.io/name: migration
+      app.kubernetes.io/component: migration
+  spec:
+    completions: 1
+    parallelism: 1
+    backoffLimit: 3
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: migration
+          app.kubernetes.io/component: migration
+        annotations: {}
+      spec:
+        containers:
+          - name: migration
+            image: migrate/migrate:v4.16.2
+            command:
+              - migrate
+              - -path
+              - /migrations
+              - -database
+              - postgres://...
+            env:
+              - name: DATABASE_URL
+                value: postgres://user:pass@postgres:5432/db
+              - name: MIGRATION_PATH
+                value: /migrations
+            imagePullPolicy: IfNotPresent

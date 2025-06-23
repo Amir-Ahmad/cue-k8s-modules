@@ -1,0 +1,100 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/api.cue --
+package app
+
+#App & {config: {
+	name: "api"
+	common: namespace: "production"
+
+	controller: api: {
+		type: "Deployment"
+		pod: {
+			image: "api:v2.1.0"
+			ports: {
+				http: {
+					port: 8000
+					expose: true
+					type: "NodePort"
+					nodePort: 30080
+				}
+				metrics: {
+					port: 9090
+					expose: true
+					type: "ClusterIP"
+				}
+			}
+			env: {
+				PORT: "8000"
+				METRICS_PORT: "9090"
+				ENV: "production"
+			}
+		}
+		spec: replicas: 3
+	}
+}}
+
+-- golden.yaml --
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: api
+    namespace: production
+    labels:
+      app.kubernetes.io/name: api
+      app.kubernetes.io/component: api
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: api
+        app.kubernetes.io/component: api
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: api
+          app.kubernetes.io/component: api
+        annotations: {}
+      spec:
+        containers:
+          - name: api
+            image: api:v2.1.0
+            ports:
+              - name: http
+                containerPort: 8000
+                protocol: TCP
+              - name: metrics
+                containerPort: 9090
+                protocol: TCP
+            env:
+              - name: PORT
+                value: "8000"
+              - name: METRICS_PORT
+                value: "9090"
+              - name: ENV
+                value: production
+            imagePullPolicy: IfNotPresent
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: api
+    namespace: production
+    labels:
+      app.kubernetes.io/name: api
+      app.kubernetes.io/component: api
+  spec:
+    ports:
+      - name: metrics
+        port: 9090
+        protocol: TCP
+        targetPort: 9090
+      - name: http
+        port: 8000
+        protocol: TCP
+        targetPort: 8000
+        nodePort: 30080
+    selector:
+      app.kubernetes.io/name: api
+      app.kubernetes.io/component: api
+    type: NodePort
