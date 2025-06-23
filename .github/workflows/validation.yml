@@ -27,7 +27,7 @@ jobs:
           fi
 
           # Extract unique module directories
-          modules=$(echo "$changed_files" | grep -E '^[^/]+/' | cut -d'/' -f1 | sort -u | grep -v '^\.github' || true)
+          modules=$(echo "$changed_files" | grep -E '^[^/]+/' | cut -d'/' -f1 | sort -u | grep -Ev '^\.github|^test' || true)
 
           # Convert to JSON array
           if [ -n "$modules" ]; then

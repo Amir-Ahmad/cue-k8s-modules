@@ -14,10 +14,10 @@ import (
 	annotations: {...}
 
 	// List of initContainers
-	initContainers: [Name=string]: #Container & {containerName: Name}
+	initContainers: [Name=string]: #ContainerConfig & {containerName: Name}
 
 	// List of AdditionalContainers
-	additionalContainers: [Name=string]: #Container & {containerName: Name}
+	additionalContainers: [Name=string]: #ContainerConfig & {containerName: Name}
 
 	// List of volumes. These will be associated to the Pod,
 	// and mounted to the primary container if mounts are provided.
@@ -90,11 +90,9 @@ import (
 			}
 		}
 	},
-		if len(c.additionalContainers) > 0 {
-			for _, v in c.additionalContainers {
-				#Container & {#config: v}
-			}
-		},
+	for v in c.additionalContainers {
+		#Container & { #config: v }
+	},
 	]
 
 	if len(c.initContainers) > 0 {
@@ -114,7 +112,7 @@ import (
 }
 
 #Container: {
-	c=#config: #PodConfig
+	c=#config: {#ContainerConfig, ...}
 
 	name:  c.containerName
 	image: c.image

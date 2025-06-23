@@ -27,6 +27,17 @@ runs:
       with:
         version: 0.25.1
 
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.x'
+
+    - name: Run Go tests
+      shell: bash
+      run: |
+        echo "Running Go tests from test/ directory"
+        cd test && go test -count=1 ./...
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:

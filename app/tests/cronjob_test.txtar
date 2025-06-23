@@ -1,0 +1,63 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/backup.cue --
+package app
+
+#App & {config: {
+	name: "backup"
+	common: namespace: "operations"
+
+	controller: backup: {
+		type: "CronJob"
+		pod: {
+			image: "alpine:3.18"
+			command: ["/bin/sh", "-c", "echo 'Running backup...'"]
+			env: {
+				BACKUP_DIR: "/backups"
+				RETENTION_DAYS: "7"
+			}
+		}
+		spec: {
+			schedule: "0 2 * * *"
+			successfulJobsHistoryLimit: 3
+			failedJobsHistoryLimit: 1
+		}
+	}
+}}
+
+-- golden.yaml --
+- apiVersion: batch/v1
+  kind: CronJob
+  metadata:
+    name: backup
+    namespace: operations
+    labels:
+      app.kubernetes.io/name: backup
+      app.kubernetes.io/component: backup
+  spec:
+    schedule: 0 2 * * *
+    jobTemplate:
+      spec:
+        template:
+          metadata:
+            labels:
+              app.kubernetes.io/name: backup
+              app.kubernetes.io/component: backup
+            annotations: {}
+          spec:
+            containers:
+              - name: backup
+                image: alpine:3.18
+                command:
+                  - /bin/sh
+                  - -c
+                  - echo 'Running backup...'
+                env:
+                  - name: BACKUP_DIR
+                    value: /backups
+                  - name: RETENTION_DAYS
+                    value: "7"
+                imagePullPolicy: IfNotPresent
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1

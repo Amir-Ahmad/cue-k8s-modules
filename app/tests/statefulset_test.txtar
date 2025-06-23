@@ -1,0 +1,102 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/postgres.cue --
+package app
+
+#App & {config: {
+	name: "postgres"
+	common: namespace: "database"
+
+	controller: postgres: {
+		type: "StatefulSet"
+		pod: {
+			image: "postgres:15"
+			ports: postgres: {
+				port: 5432
+				expose: true
+			}
+			env: {
+				POSTGRES_DB: "mydb"
+				POSTGRES_USER: "user"
+				POSTGRES_PASSWORD: "secret"
+			}
+		}
+		spec: {
+			replicas: 1
+			volumeClaimTemplates: [{
+				metadata: name: "data"
+				spec: {
+					accessModes: ["ReadWriteOnce"]
+					resources: requests: storage: "10Gi"
+				}
+			}]
+		}
+	}
+}}
+
+-- golden.yaml --
+- apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    name: postgres
+    namespace: database
+    labels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: postgres
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/component: postgres
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: postgres
+          app.kubernetes.io/component: postgres
+        annotations: {}
+      spec:
+        containers:
+          - name: postgres
+            image: postgres:15
+            ports:
+              - name: postgres
+                containerPort: 5432
+                protocol: TCP
+            env:
+              - name: POSTGRES_DB
+                value: mydb
+              - name: POSTGRES_USER
+                value: user
+              - name: POSTGRES_PASSWORD
+                value: secret
+            imagePullPolicy: IfNotPresent
+    volumeClaimTemplates:
+      - metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+    serviceName: postgres
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: postgres
+    namespace: database
+    labels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: postgres
+  spec:
+    ports:
+      - name: postgres
+        port: 5432
+        protocol: TCP
+        targetPort: 5432
+    selector:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: postgres
+    type: ClusterIP

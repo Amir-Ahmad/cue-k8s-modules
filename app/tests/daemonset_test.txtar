@@ -1,0 +1,83 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/fluentd.cue --
+package app
+
+#App & {config: {
+	name: "fluentd"
+	common: namespace: "logging"
+
+	controller: fluentd: {
+		type: "DaemonSet"
+		pod: {
+			image: "fluentd:v1.16-1"
+			ports: forward: {
+				port: 24224
+				expose: true
+			}
+			env: {
+				FLUENTD_CONF: "fluent.conf"
+				FLUENTD_OPT: "-v"
+			}
+		}
+		spec: {
+			updateStrategy: type: "RollingUpdate"
+		}
+	}
+}}
+
+-- golden.yaml --
+- apiVersion: apps/v1
+  kind: DaemonSet
+  metadata:
+    name: fluentd
+    namespace: logging
+    labels:
+      app.kubernetes.io/name: fluentd
+      app.kubernetes.io/component: fluentd
+  spec:
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: fluentd
+        app.kubernetes.io/component: fluentd
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: fluentd
+          app.kubernetes.io/component: fluentd
+        annotations: {}
+      spec:
+        containers:
+          - name: fluentd
+            image: fluentd:v1.16-1
+            ports:
+              - name: forward
+                containerPort: 24224
+                protocol: TCP
+            env:
+              - name: FLUENTD_CONF
+                value: fluent.conf
+              - name: FLUENTD_OPT
+                value: -v
+            imagePullPolicy: IfNotPresent
+    updateStrategy:
+      type: RollingUpdate
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: fluentd
+    namespace: logging
+    labels:
+      app.kubernetes.io/name: fluentd
+      app.kubernetes.io/component: fluentd
+  spec:
+    ports:
+      - name: forward
+        port: 24224
+        protocol: TCP
+        targetPort: 24224
+    selector:
+      app.kubernetes.io/name: fluentd
+      app.kubernetes.io/component: fluentd
+    type: ClusterIP

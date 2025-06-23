@@ -1,0 +1,181 @@
+exec cue export -e outObjects --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/webapp.cue --
+package app
+
+#App & {config: {
+	name: "webapp"
+	common: namespace: "default"
+
+	configmap: appconfig: {
+		data: {
+			"app.yaml": """
+				debug: true
+				port: 8080
+				database:
+				  host: postgres
+				  port: 5432
+				"""
+			"nginx.conf": """
+				server {
+				  listen 80;
+				  location / {
+				    proxy_pass http://localhost:8080;
+				  }
+				}
+				"""
+		}
+		rollControllers: ["webapp", "nginx"]
+	}
+
+	controller: webapp: {
+		type: "Deployment"
+		pod: {
+			image: "webapp:v1.0.0"
+			ports: http: {
+				port: 8080
+				expose: true
+			}
+			env: {
+				CONFIG_FILE: "/config/app.yaml"
+			}
+		}
+		spec: replicas: 2
+	}
+
+	controller: nginx: {
+		type: "Deployment"
+		pod: {
+			image: "nginx:1.25"
+			ports: http: {
+				port: 80
+				expose: true
+			}
+		}
+		spec: replicas: 1
+	}
+}}
+
+-- golden.yaml --
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: appconfig
+    namespace: default
+    labels:
+      app.kubernetes.io/name: webapp
+  data:
+    app.yaml: |-
+      debug: true
+      port: 8080
+      database:
+        host: postgres
+        port: 5432
+    nginx.conf: |-
+      server {
+        listen 80;
+        location / {
+          proxy_pass http://localhost:8080;
+        }
+      }
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: webapp
+    namespace: default
+    labels:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/component: webapp
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: webapp
+        app.kubernetes.io/component: webapp
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: webapp
+          app.kubernetes.io/component: webapp
+          config/appconfig/checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
+        annotations: {}
+      spec:
+        containers:
+          - name: webapp
+            image: webapp:v1.0.0
+            ports:
+              - name: http
+                containerPort: 8080
+                protocol: TCP
+            env:
+              - name: CONFIG_FILE
+                value: /config/app.yaml
+            imagePullPolicy: IfNotPresent
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nginx
+    namespace: default
+    labels:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/component: nginx
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: webapp
+        app.kubernetes.io/component: nginx
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: webapp
+          app.kubernetes.io/component: nginx
+          config/appconfig/checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
+        annotations: {}
+      spec:
+        containers:
+          - name: nginx
+            image: nginx:1.25
+            ports:
+              - name: http
+                containerPort: 80
+                protocol: TCP
+            env: []
+            imagePullPolicy: IfNotPresent
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: webapp
+    namespace: default
+    labels:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/component: webapp
+  spec:
+    ports:
+      - name: http
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/component: webapp
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: nginx
+    namespace: default
+    labels:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/component: nginx
+  spec:
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+        targetPort: 80
+    selector:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/component: nginx
+    type: ClusterIP
