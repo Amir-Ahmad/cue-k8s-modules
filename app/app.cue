@@ -41,7 +41,7 @@ import (
 		labels:    X.common.labels
 	}
 
-	controller: [n=string]: #Controller & {
+	controller: [n=string]: #ControllerConfig & {
 		metadata: commonMetadata & {
 			name:   string | *n
 			labels: selectorLabels
@@ -84,52 +84,10 @@ import (
 
 	for n, controller in c.controller {
 		_controllerPatch: "\(n)": #ControllerCommon
-		let _controllerConfig = controller & _controllerPatch[n]
 
-		if controller.type == #DeploymentController {
-			let obj = (#Deployment & {#config: _controllerConfig}).out
-			objects: Deployment: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
-		}
-
-		if controller.type == #DaemonSetController {
-			let obj = (#DaemonSet & {#config: _controllerConfig}).out
-			objects: DaemonSet: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
-		}
-
-		if controller.type == #StatefulSetController {
-			let obj = (#StatefulSet & {#config: _controllerConfig}).out
-			objects: StatefulSet: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
-		}
-
-		if controller.type == #CronJobController {
-			let obj = (#CronJob & {#config: _controllerConfig}).out
-			objects: CronJob: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
-		}
-
-		if controller.type == #JobController {
-			let obj = (#Job & {#config: _controllerConfig}).out
-			objects: Job: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
-		}
-
-		let clusterIpPorts = [for port in controller.pod.ports if port.expose == true if port.type == "ClusterIP" {port}]
-		let nodePorts = [for port in controller.pod.ports if port.expose == true if port.type == "NodePort" {port}]
-		let combinedPorts = list.Concat([clusterIpPorts, nodePorts])
-
-		// Create service
-		if len(combinedPorts) > 0 {
-			let obj = (#Service & {
-				#config: {
-					metadata:       controller.metadata
-					ports:          combinedPorts
-					selectorLabels: controller.selectorLabels
-					spec: type: string | *"ClusterIP"
-					if len(nodePorts) > 0 {
-						spec: type: "NodePort"
-					}
-				}
-			}).out
-
-			objects: Service: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
+		// Add controller objects
+		for obj in (#Controller & {#config: controller & _controllerPatch[n]}).out {
+			objects: "\(obj.kind)": "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
 		}
 	}
 

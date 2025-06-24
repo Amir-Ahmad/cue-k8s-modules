@@ -90,9 +90,9 @@ import (
 			}
 		}
 	},
-	for v in c.additionalContainers {
-		#Container & { #config: v }
-	},
+		for v in c.additionalContainers {
+			#Container & {#config: v}
+		},
 	]
 
 	if len(c.initContainers) > 0 {
