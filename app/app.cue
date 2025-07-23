@@ -92,7 +92,7 @@ import (
 	}
 
 	// output abstracted objects along with any objects defined in #AppConfig
-	outObjects: list.Concat([[
+	out: list.Concat([[
 		for kind in objects
 		for ns in kind
 		for object in ns {object},

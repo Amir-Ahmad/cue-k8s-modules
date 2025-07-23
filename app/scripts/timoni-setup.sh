@@ -56,7 +56,7 @@ timoni: {
 	}
 
 	// Provide output objects to timoni
-	apply: app: instance.outObjects
+	apply: app: instance.out
 }
 EOF
 
