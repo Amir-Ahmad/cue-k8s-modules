@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/webapp.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "webapp"
 	common: namespace: "default"
 
@@ -55,7 +55,7 @@ package app
 		}
 		spec: replicas: 1
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: v1

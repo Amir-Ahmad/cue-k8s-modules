@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/fluentd.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "fluentd"
 	common: namespace: "logging"
 
@@ -25,7 +25,7 @@ package app
 			updateStrategy: type: "RollingUpdate"
 		}
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: apps/v1

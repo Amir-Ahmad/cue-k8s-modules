@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/monitoring.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "monitoring"
 	common: {
 		namespace: "monitoring"
@@ -52,7 +52,7 @@ package app
 			}
 		}
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: apps/v1

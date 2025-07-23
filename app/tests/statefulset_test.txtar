@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/postgres.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "postgres"
 	common: namespace: "database"
 
@@ -33,7 +33,7 @@ package app
 			}]
 		}
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: apps/v1

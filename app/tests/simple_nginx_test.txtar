@@ -4,7 +4,7 @@ cmp stdout golden/nginx.yaml
 -- apps/nginx.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "nginx"
 	common: namespace: "default"
 
@@ -14,7 +14,7 @@ package app
 		pod: ports: http: port: 8080
 		spec: replicas: 1
 	}
-}}
+}}).out
 
 -- golden/nginx.yaml --
 - apiVersion: apps/v1

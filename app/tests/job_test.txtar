@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/migration.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "migration"
 	common: namespace: "default"
 
@@ -24,7 +24,7 @@ package app
 			backoffLimit: 3
 		}
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: batch/v1

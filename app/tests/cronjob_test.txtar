@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/backup.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "backup"
 	common: namespace: "operations"
 
@@ -24,7 +24,7 @@ package app
 			failedJobsHistoryLimit: 1
 		}
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: batch/v1

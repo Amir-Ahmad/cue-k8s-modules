@@ -4,7 +4,7 @@ cmp stdout golden.yaml
 -- apps/fullapp.cue --
 package app
 
-#App & {config: {
+out: (#App & {config: {
 	name: "fullapp"
 	common: namespace: "default"
 
@@ -133,7 +133,7 @@ package app
 			}
 		}
 	}
-}}
+}}).out
 
 -- golden.yaml --
 - apiVersion: apps/v1
