@@ -1,0 +1,13 @@
+! exec cue export -e out --out yaml ./apps/...
+stderr 'mismatched types string and int'
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	// Invalid spec: replicas should be a number, not a string
+	object: namespaced: Deployment: "invalid": spec: replicas: "three"  
+}}).out

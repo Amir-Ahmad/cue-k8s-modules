@@ -1,0 +1,25 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	object: namespaced: ConfigMap: "foo": {
+		data: key: "value"
+	}
+}}).out
+
+-- golden.yaml --
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: foo
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+  data:
+    key: value

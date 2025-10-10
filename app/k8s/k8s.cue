@@ -7,6 +7,7 @@ import (
 	batch_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/batch/v1"
 	storage_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/storage/v1"
 	meta_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/apis/meta/v1"
+	rbac_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/api/rbac/v1"
 )
 
 #StatefulSet: apps_v1.#StatefulSet & {
@@ -49,6 +50,11 @@ import (
 	kind:       "ConfigMap"
 }
 
+#Secret: core_v1.#Secret & {
+	apiVersion: "v1"
+	kind:       "Secret"
+}
+
 #StorageClass: storage_v1.#StorageClass & {
 	apiVersion: "storage.k8s.io/v1"
 	kind:       "StorageClass"
@@ -62,6 +68,36 @@ import (
 #PersistentVolumeClaim: core_v1.#PersistentVolumeClaim & {
 	apiVersion: "v1"
 	kind:       "PersistentVolumeClaim"
+}
+
+#ServiceAccount: core_v1.#ServiceAccount & {
+	apiVersion: "v1"
+	kind:       "ServiceAccount"
+}
+
+#Role: rbac_v1.#Role & {
+	apiVersion: "rbac.authorization.k8s.io/v1"
+	kind:       "Role"
+}
+
+#RoleBinding: rbac_v1.#RoleBinding & {
+	apiVersion: "rbac.authorization.k8s.io/v1"
+	kind:       "RoleBinding"
+}
+
+#ClusterRole: rbac_v1.#ClusterRole & {
+	apiVersion: "rbac.authorization.k8s.io/v1"
+	kind:       "ClusterRole"
+}
+
+#ClusterRoleBinding: rbac_v1.#ClusterRoleBinding & {
+	apiVersion: "rbac.authorization.k8s.io/v1"
+	kind:       "ClusterRoleBinding"
+}
+
+#NetworkPolicy: net_v1.#NetworkPolicy & {
+	apiVersion: "networking.k8s.io/v1"
+	kind:       "NetworkPolicy"
 }
 
 #Metadata: meta_v1.#ObjectMeta

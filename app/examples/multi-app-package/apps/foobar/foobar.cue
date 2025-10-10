@@ -42,7 +42,7 @@ app: foobar: {
 		pod: image: "job:v1"
 	}
 
-	object: PersistentVolumeClaim: "foo-pvc": spec: {
+	object: namespaced: PersistentVolumeClaim: "foo-pvc": spec: {
 		resources: requests: storage: "10gb"
 		storageClassName: "local"
 	}

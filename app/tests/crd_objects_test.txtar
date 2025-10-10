@@ -1,0 +1,320 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/crds.cue --
+package app
+
+out: (#App & {config: {
+	name: "crd-app"
+	common: namespace: "crd-test"
+
+	// Test CRD objects using the ObjectMap
+	object: namespaced: {
+		ExternalSecret: "api-secrets": {
+			spec: {
+				refreshInterval: "1h"
+				secretStoreRef: {
+					name: "vault-backend"
+					kind: "SecretStore"
+				}
+				target: {
+					name: "api-credentials"
+					creationPolicy: "Owner"
+				}
+				data: [{
+					secretKey: "api-key"
+					remoteRef: {
+						key: "production/api/key"
+					}
+				}, {
+					secretKey: "api-secret"
+					remoteRef: {
+						key: "production/api/secret"
+					}
+				}]
+			}
+		}
+
+		SecretStore: "vault-backend": {
+			spec: {
+				provider: vault: {
+					server: "https://vault.example.com"
+					path: "secret"
+					version: "v2"
+					auth: kubernetes: {
+						mountPath: "kubernetes"
+						role: "external-secrets"
+						serviceAccountRef: name: "external-secrets"
+					}
+				}
+			}
+		}
+
+		Gateway: "api-gateway": {
+			spec: {
+				gatewayClassName: "istio"
+				listeners: [{
+					name: "http"
+					protocol: "HTTP"
+					port: 80
+					allowedRoutes: namespaces: from: "Same"
+				}, {
+					name: "https"
+					protocol: "HTTPS"
+					port: 443
+					tls: {
+						mode: "Terminate"
+						certificateRefs: [{
+							kind: "Secret"
+							name: "tls-cert"
+						}]
+					}
+					allowedRoutes: namespaces: from: "Same"
+				}]
+			}
+		}
+
+		HTTPRoute: "api-route": {
+			spec: {
+				parentRefs: [{
+					name: "api-gateway"
+				}]
+				hostnames: ["api.example.com"]
+				rules: [{
+					matches: [{
+						path: {
+							type: "PathPrefix"
+							value: "/api/v1"
+						}
+					}]
+					backendRefs: [{
+						name: "api-service"
+						port: 8080
+					}]
+				}]
+			}
+		}
+
+		GRPCRoute: "grpc-route": {
+			spec: {
+				parentRefs: [{
+					name: "api-gateway"
+				}]
+				hostnames: ["grpc.example.com"]
+				rules: [{
+					matches: [{
+						method: {
+							type: "Exact"
+							service: "api.v1.ApiService"
+						}
+					}]
+					backendRefs: [{
+						name: "grpc-service"
+						port: 9090
+					}]
+				}]
+			}
+		}
+
+		BackendTLSPolicy: "backend-tls": {
+			spec: {
+				targetRefs: [{
+					group: ""	
+					kind: "Service"
+					name: "secure-backend"
+				}]
+				validation: {
+					caCertificateRefs: [{
+						group: ""
+						kind: "ConfigMap"
+						name: "backend-ca"
+					}]
+					hostname: "backend.internal"
+				}
+			}
+		}
+	}
+
+	object: clusterscoped: {
+		ClusterSecretStore: "vault-cluster": {
+			spec: {
+				provider: vault: {
+					server: "https://vault.example.com"
+					path: "secret"
+					version: "v2"
+					auth: kubernetes: {
+						mountPath: "kubernetes"
+						role: "cluster-external-secrets"
+						serviceAccountRef: {
+							name: "external-secrets"
+							namespace: "external-secrets-system"
+						}
+					}
+				}
+			}
+		}
+
+		GatewayClass: "istio": {
+			spec: {
+				controllerName: "istio.io/gateway-controller"
+				description: "Istio-based gateway class"
+			}
+		}
+	}
+}}).out
+
+-- golden.yaml --
+- apiVersion: external-secrets.io/v1
+  kind: ExternalSecret
+  metadata:
+    name: api-secrets
+    namespace: crd-test
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    data:
+      - remoteRef:
+          key: production/api/key
+        secretKey: api-key
+      - remoteRef:
+          key: production/api/secret
+        secretKey: api-secret
+    refreshInterval: 1h
+    secretStoreRef:
+      kind: SecretStore
+      name: vault-backend
+    target:
+      creationPolicy: Owner
+      name: api-credentials
+- apiVersion: external-secrets.io/v1
+  kind: SecretStore
+  metadata:
+    name: vault-backend
+    namespace: crd-test
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    provider:
+      vault:
+        auth:
+          kubernetes:
+            mountPath: kubernetes
+            role: external-secrets
+            serviceAccountRef:
+              name: external-secrets
+        path: secret
+        server: https://vault.example.com
+        version: v2
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: Gateway
+  metadata:
+    name: api-gateway
+    namespace: crd-test
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    gatewayClassName: istio
+    listeners:
+      - allowedRoutes:
+          namespaces:
+            from: Same
+        name: http
+        port: 80
+        protocol: HTTP
+      - allowedRoutes:
+          namespaces:
+            from: Same
+        name: https
+        port: 443
+        protocol: HTTPS
+        tls:
+          certificateRefs:
+            - kind: Secret
+              name: tls-cert
+          mode: Terminate
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    name: api-route
+    namespace: crd-test
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    hostnames:
+      - api.example.com
+    parentRefs:
+      - name: api-gateway
+    rules:
+      - backendRefs:
+          - name: api-service
+            port: 8080
+        matches:
+          - path:
+              type: PathPrefix
+              value: /api/v1
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: GRPCRoute
+  metadata:
+    name: grpc-route
+    namespace: crd-test
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    hostnames:
+      - grpc.example.com
+    parentRefs:
+      - name: api-gateway
+    rules:
+      - backendRefs:
+          - name: grpc-service
+            port: 9090
+        matches:
+          - method:
+              service: api.v1.ApiService
+              type: Exact
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: BackendTLSPolicy
+  metadata:
+    name: backend-tls
+    namespace: crd-test
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    targetRefs:
+      - group: ""
+        kind: Service
+        name: secure-backend
+    validation:
+      caCertificateRefs:
+        - group: ""
+          kind: ConfigMap
+          name: backend-ca
+      hostname: backend.internal
+- apiVersion: external-secrets.io/v1
+  kind: ClusterSecretStore
+  metadata:
+    name: vault-cluster
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    provider:
+      vault:
+        auth:
+          kubernetes:
+            mountPath: kubernetes
+            role: cluster-external-secrets
+            serviceAccountRef:
+              name: external-secrets
+              namespace: external-secrets-system
+        path: secret
+        server: https://vault.example.com
+        version: v2
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: GatewayClass
+  metadata:
+    name: istio
+    labels:
+      app.kubernetes.io/name: crd-app
+  spec:
+    controllerName: istio.io/gateway-controller
+    description: Istio-based gateway class
