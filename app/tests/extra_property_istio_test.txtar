@@ -1,0 +1,84 @@
+exec cue export -e 'out.foo' --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- main.cue --
+package app
+
+app: [Name=string]: #AppConfig & {
+	name: string | *Name
+
+	x: enableIstio: bool | *false
+
+	if x.enableIstio {
+		controller: [string]:  pod: labels: "sidecar.istio.io/inject": "true"
+	}
+}
+
+for k, v in app {
+	out: "\(k)": (#App & {config: v}).out
+}
+
+-- apps/foo.cue --
+package app
+
+app: foo: {
+	common: namespace: "default"
+
+	x: enableIstio: true
+
+	controller: foobar: {
+		type: "Deployment"
+		pod: image: "foobar:latest"
+		pod: ports: http: port: 5050
+	}
+}
+
+-- golden.yaml --
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: foobar
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foobar
+  spec:
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: foo
+        app.kubernetes.io/component: foobar
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: foo
+          app.kubernetes.io/component: foobar
+          sidecar.istio.io/inject: "true"
+        annotations: {}
+      spec:
+        containers:
+          - name: foobar
+            image: foobar:latest
+            ports:
+              - name: http
+                containerPort: 5050
+                protocol: TCP
+            env: []
+            imagePullPolicy: Always
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: foobar
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foobar
+  spec:
+    ports:
+      - name: http
+        port: 5050
+        protocol: TCP
+        targetPort: 5050
+    selector:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foobar
+    type: ClusterIP

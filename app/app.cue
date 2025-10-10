@@ -62,6 +62,13 @@ import (
 	configmap: [n=string]: #ConfigMapConfig & {
 		metadata: commonMetadata & {name: string | *n}
 	}
+
+	// Any additional fields or properties can be set under `x:`
+	// This allows for additional abstractions and logic that is specific to your use case.
+	// e.g. You can create a property: `"x.enableIstio": bool`, and when true,
+	// add a sidecar.istio.io/inject label to inject with istio.
+	// Full example: app/tests/extra_property_istio_test.txtar
+	x: {...}
 }
 
 #App: {
