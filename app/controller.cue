@@ -20,6 +20,10 @@ import (
 
 	// set spec of controller directly
 	spec: {...}
+
+	// A minimal service is automatically created when there is 1+ exposed port.
+	// service.spec or service.metadata can be specified here for additional customisation.
+	service: #ServiceConfig
 }
 
 #ControllerConfig: {
@@ -158,14 +162,13 @@ import (
 		if len(combinedPorts) > 0 {
 			(#Service & {
 				#config: {
-					metadata:       c.metadata
 					ports:          combinedPorts
 					selectorLabels: c.selectorLabels
 					spec: type: string | *"ClusterIP"
 					if len(nodePorts) > 0 {
 						spec: type: "NodePort"
 					}
-				}
+				} & c.service
 			}).out
 		},
 	]

@@ -48,6 +48,12 @@ import (
 			name:   string | *n
 			labels: selectorLabels
 		}
+
+		service: metadata: commonMetadata & {
+			name:   string | *n
+			labels: selectorLabels
+		}
+
 		pod: {
 			containerName: string | *n
 			labels:        common.podLabels & selectorLabels
