@@ -32,8 +32,9 @@ cue mod init --source=git github.com/amir-ahmad/cue-k8s-modules/k8s-schema@v0
 go mod init github.com/amir-ahmad/cue-k8s-modules/k8s-schema
 ```
 
-2. Run generate script
+2. Run generate scripts
 
 ```
-./generate.sh
+./generate-k8s.sh
+./generate-crds.sh "path-to-crd-yaml"
 ```
