@@ -7,7 +7,7 @@ source: {
 }
 deps: {
 	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema@v0": {
-		v:       "v0.1.0"
+		v:       "v0.2.0"
 		default: true
 	}
 }

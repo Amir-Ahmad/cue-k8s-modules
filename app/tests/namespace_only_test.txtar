@@ -1,0 +1,19 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+
+	object: clusterscoped: Namespace: "foo-ns": {}
+}}).out
+
+-- golden.yaml --
+- apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: foo-ns
+    labels:
+      app.kubernetes.io/name: foo

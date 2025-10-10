@@ -15,7 +15,7 @@ abstracted_app=app: [Name=string]: pkg_app.#AppConfig & {
 		pod: env: TZ: string | null | *"Australia/Sydney"
 	}
 
-	object: PersistentVolumeClaim: [string]: k8s.#PersistentVolumeClaim & {
+	object: namespaced: PersistentVolumeClaim: [string]: k8s.#PersistentVolumeClaim & {
 		spec: accessModes: [...string] | *["ReadWriteOnce"]
 	}
 

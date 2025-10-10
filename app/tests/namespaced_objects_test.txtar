@@ -1,0 +1,130 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/rbac-app.cue --
+package app
+
+out: (#App & {config: {
+	name: "rbac-app"
+	common: namespace: "namespaced-test"
+
+	// Test various namespaced objects using the ObjectMap
+	object: namespaced: {
+		Secret: "db-credentials": {
+			stringData: {
+				username: "admin"
+				password: "secret123"
+			}
+		}
+
+		ServiceAccount: "app-sa": {
+			automountServiceAccountToken: false
+		}
+
+		Role: "app-role": {
+			rules: [{
+				apiGroups: [""]
+				resources: ["pods", "services"]
+				verbs: ["get", "list", "watch"]
+			}, {
+				apiGroups: ["apps"]
+				resources: ["deployments"]
+				verbs: ["get", "list"]
+			}]
+		}
+
+		RoleBinding: "app-rb": {
+			subjects: [{
+				kind: "ServiceAccount"
+				name: "app-sa"
+				namespace: "test-ns"
+			}]
+			roleRef: {
+				kind: "Role"
+				name: "app-role"
+				apiGroup: "rbac.authorization.k8s.io"
+			}
+		}
+
+		PersistentVolumeClaim: "data-pvc": {
+			spec: {
+				accessModes: ["ReadWriteOnce"]
+				resources: requests: storage: "10Gi"
+				storageClassName: "fast-ssd"
+			}
+		}
+	}
+}}).out
+
+-- golden.yaml --
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: db-credentials
+    namespace: namespaced-test
+    labels:
+      app.kubernetes.io/name: rbac-app
+  stringData:
+    username: admin
+    password: secret123
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: app-sa
+    namespace: namespaced-test
+    labels:
+      app.kubernetes.io/name: rbac-app
+  automountServiceAccountToken: false
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    name: app-role
+    namespace: namespaced-test
+    labels:
+      app.kubernetes.io/name: rbac-app
+  rules:
+    - apiGroups:
+        - ""
+      resources:
+        - pods
+        - services
+      verbs:
+        - get
+        - list
+        - watch
+    - apiGroups:
+        - apps
+      resources:
+        - deployments
+      verbs:
+        - get
+        - list
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: app-rb
+    namespace: namespaced-test
+    labels:
+      app.kubernetes.io/name: rbac-app
+  subjects:
+    - kind: ServiceAccount
+      name: app-sa
+      namespace: test-ns
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: app-role
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: data-pvc
+    namespace: namespaced-test
+    labels:
+      app.kubernetes.io/name: rbac-app
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+    storageClassName: fast-ssd
