@@ -1,0 +1,301 @@
+package v1alpha1
+
+import (
+	"strings"
+	"struct"
+	"time"
+)
+
+#PushSecret: {
+	_embeddedResource
+
+	// APIVersion defines the versioned schema of this representation
+	// of an object.
+	// Servers should convert recognized schemas to the latest
+	// internal value, and
+	// may reject unrecognized values.
+	// More info:
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+	apiVersion?: string
+
+	// Kind is a string value representing the REST resource this
+	// object represents.
+	// Servers may infer this from the endpoint the client submits
+	// requests to.
+	// Cannot be updated.
+	// In CamelCase.
+	// More info:
+	// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+	kind?: string
+	metadata?: {}
+
+	// PushSecretSpec configures the behavior of the PushSecret.
+	spec?: {
+		// Secret Data that should be pushed to providers
+		data?: [...{
+			// Used to define a conversion Strategy for the secret keys
+			conversionStrategy?: "None" | "ReverseUnicode"
+
+			// Match a given Secret Key to be pushed to the provider.
+			match!: {
+				// Remote Refs to push to providers.
+				remoteRef!: {
+					// Name of the property in the resulting secret
+					property?: string
+
+					// Name of the resulting provider secret.
+					remoteKey!: string
+				}
+
+				// Secret Key to be pushed
+				secretKey?: string
+			}
+
+			// Metadata is metadata attached to the secret.
+			// The structure of metadata is provider specific, please look it
+			// up in the provider documentation.
+			metadata?: null | bool | number | string | [...] | {
+				...
+			}
+		}]
+
+		// Deletion Policy to handle Secrets in the provider.
+		deletionPolicy?: "Delete" | "None"
+
+		// The Interval to which External Secrets will try to push a
+		// secret definition
+		refreshInterval?: string
+		secretStoreRefs!: [...{
+			// Kind of the SecretStore resource (SecretStore or
+			// ClusterSecretStore)
+			kind?: "SecretStore" | "ClusterSecretStore"
+
+			// Optionally, sync to secret stores with label selector
+			labelSelector?: {
+				// matchExpressions is a list of label selector requirements. The
+				// requirements are ANDed.
+				matchExpressions?: [...{
+					// key is the label key that the selector applies to.
+					key!: string
+
+					// operator represents a key's relationship to a set of values.
+					// Valid operators are In, NotIn, Exists and DoesNotExist.
+					operator!: string
+
+					// values is an array of string values. If the operator is In or
+					// NotIn,
+					// the values array must be non-empty. If the operator is Exists
+					// or DoesNotExist,
+					// the values array must be empty. This array is replaced during a
+					// strategic
+					// merge patch.
+					values?: [...string]
+				}]
+
+				// matchLabels is a map of {key,value} pairs. A single {key,value}
+				// in the matchLabels
+				// map is equivalent to an element of matchExpressions, whose key
+				// field is "key", the
+				// operator is "In", and the values array contains only "value".
+				// The requirements are ANDed.
+				matchLabels?: [string]: string
+			}
+
+			// Optionally, sync to the SecretStore of the given name
+			name?: strings.MaxRunes(
+				253) & strings.MinRunes(
+				1) & =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+		}]
+
+		// The Secret Selector (k8s source) for the Push Secret
+		selector!: struct.MinFields(
+			1) & struct.MaxFields(
+			1) & {
+				// Point to a generator to create a Secret.
+				generatorRef?: {
+					// Specify the apiVersion of the generator resource
+					apiVersion?: string
+
+					// Specify the Kind of the generator resource
+					kind!: "ACRAccessToken" | "ClusterGenerator" | "CloudsmithAccessToken" | "ECRAuthorizationToken" | "Fake" | "GCRAccessToken" | "GithubAccessToken" | "QuayAccessToken" | "Password" | "SSHKey" | "STSSessionToken" | "UUID" | "VaultDynamicSecret" | "Webhook" | "Grafana" | "MFA"
+
+					// Specify the name of the generator resource
+					name!: strings.MaxRunes(
+						253) & strings.MinRunes(
+						1) & =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+				}
+
+				// Select a Secret to Push.
+				secret?: {
+					// Name of the Secret.
+					// The Secret must exist in the same namespace as the PushSecret
+					// manifest.
+					name?: strings.MaxRunes(
+						253) & strings.MinRunes(
+						1) & =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+
+					// Selector chooses secrets using a labelSelector.
+					selector?: {
+						// matchExpressions is a list of label selector requirements. The
+						// requirements are ANDed.
+						matchExpressions?: [...{
+							// key is the label key that the selector applies to.
+							key!: string
+
+							// operator represents a key's relationship to a set of values.
+							// Valid operators are In, NotIn, Exists and DoesNotExist.
+							operator!: string
+
+							// values is an array of string values. If the operator is In or
+							// NotIn,
+							// the values array must be non-empty. If the operator is Exists
+							// or DoesNotExist,
+							// the values array must be empty. This array is replaced during a
+							// strategic
+							// merge patch.
+							values?: [...string]
+						}]
+
+						// matchLabels is a map of {key,value} pairs. A single {key,value}
+						// in the matchLabels
+						// map is equivalent to an element of matchExpressions, whose key
+						// field is "key", the
+						// operator is "In", and the values array contains only "value".
+						// The requirements are ANDed.
+						matchLabels?: [string]: string
+					}
+				}
+			}
+
+		// Template defines a blueprint for the created Secret resource.
+		template?: {
+			data?: [string]: string
+
+			// EngineVersion specifies the template engine version
+			// that should be used to compile/execute the
+			// template specified in .data and .templateFrom[].
+			engineVersion?: "v2"
+			mergePolicy?:   "Replace" | "Merge"
+
+			// ExternalSecretTemplateMetadata defines metadata fields for the
+			// Secret blueprint.
+			metadata?: {
+				annotations?: [string]: string
+				finalizers?: [...string]
+				labels?: [string]: string
+			}
+			templateFrom?: [...{
+				configMap?: {
+					// A list of keys in the ConfigMap/Secret to use as templates for
+					// Secret data
+					items!: [...{
+						// A key in the ConfigMap/Secret
+						key!:        strings.MaxRunes(
+								253) & strings.MinRunes(
+								1) & =~"^[-._a-zA-Z0-9]+$"
+						templateAs?: "Values" | "KeysAndValues"
+					}]
+
+					// The name of the ConfigMap/Secret resource
+					name!: strings.MaxRunes(
+						253) & strings.MinRunes(
+						1) & =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+				}
+				literal?: string
+				secret?: {
+					// A list of keys in the ConfigMap/Secret to use as templates for
+					// Secret data
+					items!: [...{
+						// A key in the ConfigMap/Secret
+						key!:        strings.MaxRunes(
+								253) & strings.MinRunes(
+								1) & =~"^[-._a-zA-Z0-9]+$"
+						templateAs?: "Values" | "KeysAndValues"
+					}]
+
+					// The name of the ConfigMap/Secret resource
+					name!: strings.MaxRunes(
+						253) & strings.MinRunes(
+						1) & =~"^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+				}
+				target?: "Data" | "Annotations" | "Labels"
+			}]
+			type?: string
+		}
+
+		// UpdatePolicy to handle Secrets in the provider.
+		updatePolicy?: "Replace" | "IfNotExists"
+	}
+
+	// PushSecretStatus indicates the history of the status of
+	// PushSecret.
+	status?: {
+		conditions?: [...{
+			lastTransitionTime?: time.Time
+			message?:            string
+			reason?:             string
+			status!:             string
+
+			// PushSecretConditionType indicates the condition of the
+			// PushSecret.
+			type!: string
+		}]
+
+		// refreshTime is the time and date the external secret was
+		// fetched and
+		// the target secret updated
+		refreshTime?:
+			null | time.Time
+
+		// Synced PushSecrets, including secrets that already exist in
+		// provider.
+		// Matches secret stores to PushSecretData that was stored to that
+		// secret store.
+		syncedPushSecrets?: [string]: [string]: {
+			// Used to define a conversion Strategy for the secret keys
+			conversionStrategy?: "None" | "ReverseUnicode"
+
+			// Match a given Secret Key to be pushed to the provider.
+			match!: {
+				// Remote Refs to push to providers.
+				remoteRef!: {
+					// Name of the property in the resulting secret
+					property?: string
+
+					// Name of the resulting provider secret.
+					remoteKey!: string
+				}
+
+				// Secret Key to be pushed
+				secretKey?: string
+			}
+
+			// Metadata is metadata attached to the secret.
+			// The structure of metadata is provider specific, please look it
+			// up in the provider documentation.
+			metadata?: null | bool | number | string | [...] | {
+				...
+			}
+		}
+
+		// SyncedResourceVersion keeps track of the last synced version.
+		syncedResourceVersion?: string
+	}
+
+	_embeddedResource: {
+		apiVersion!: string
+		kind!:       string
+		metadata?: {
+			...
+		}
+	}
+	apiVersion: "external-secrets.io/v1alpha1"
+	kind:       "PushSecret"
+	metadata!: {
+		name!:      string
+		namespace!: string
+		labels?: [string]: string
+		annotations?: [string]: string
+		...
+	}
+}
