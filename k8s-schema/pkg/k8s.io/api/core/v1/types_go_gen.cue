@@ -7,6 +7,7 @@ package v1
 import (
 	metav1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/api/resource"
+	resource_9 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/api/resource"
 	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/util/intstr"
 	"github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/k8s.io/apimachinery/pkg/types"
 )
@@ -2693,11 +2694,11 @@ import (
 	containerName?: string @go(ContainerName) @protobuf(1,bytes,opt)
 
 	// Required: resource to select
-	"resource": string @go(Resource) @protobuf(2,bytes,opt)
+	resource: string @go(Resource) @protobuf(2,bytes,opt)
 
 	// Specifies the output format of the exposed resources, defaults to "1"
 	// +optional
-	divisor?: resource.#Quantity @go(Divisor) @protobuf(3,bytes,opt)
+	divisor?: resource_9.#Quantity @go(Divisor) @protobuf(3,bytes,opt)
 }
 
 // Selects a key from a ConfigMap.
