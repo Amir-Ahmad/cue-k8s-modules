@@ -1,0 +1,60 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	controller: main: {
+		type: "Deployment"
+		pod: image: "nginx:latest"
+		spec: replicas: 1
+		pod: {
+			env: FOO_CONFIG: "bar"
+      envSecret: FOO_TOKEN: secret: "foo-secret"
+      envFrom: [{configMapRef: name: "foo-config"}]
+		}
+
+	}
+}}).out
+
+-- golden.yaml --
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: main
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: main
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: foo
+        app.kubernetes.io/component: main
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: foo
+          app.kubernetes.io/component: main
+        annotations: {}
+      spec:
+        containers:
+          - name: main
+            image: nginx:latest
+            envFrom:
+              - configMapRef:
+                  name: foo-config
+            env:
+              - name: FOO_CONFIG
+                value: bar
+              - name: FOO_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: foo-secret
+                    key: FOO_TOKEN
+            imagePullPolicy: Always

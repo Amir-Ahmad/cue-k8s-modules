@@ -54,6 +54,17 @@ import (
 	// Set container environment variables from configmap or secret
 	envFrom: [...k8s.#EnvFromSource]
 
+	envSecret: [N=string]: {
+		// Name of the envvar to inject
+		name: *N | string
+
+		// Secret name
+		secret: string
+
+		// Property within the secret.
+		secretKey: *N | string
+	}
+
 	// Resources requirements / limits
 	resources?: k8s.#Resources
 
@@ -146,7 +157,16 @@ import (
 		envFrom: c.envFrom
 	}
 
-	env: [for k, v in c.env if v != null {name: k, value: v}]
+	env: list.Concat([
+		[for k, v in c.env if v != null {name: k, value: v}],
+		[for v in c.envSecret {
+			name: v.name
+			valueFrom: secretKeyRef: {
+				name: v.secret
+				key:  v.secretKey
+			}
+		}],
+	])
 
 	if len(c.volumeMounts) > 0 {
 		volumeMounts: c.volumeMounts
