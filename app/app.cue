@@ -69,6 +69,13 @@ import (
 		metadata: commonMetadata & {name: string | *n}
 	}
 
+	// Ingress is a simple abstraction over HTTPRoute or Ingress,
+	// which assumes a single route with all traffic.
+	// For advanced use cases you may want to use object: instead.
+	ingress: [n=string]: #IngressConfig & {
+		metadata: commonMetadata & {name: string | *n}
+	}
+
 	// Any additional fields or properties can be set under `x:`
 	// This allows for additional abstractions and logic that is specific to your use case.
 	// e.g. You can create a property: `"x.enableIstio": bool`, and when true,
@@ -104,6 +111,11 @@ import (
 		for obj in (#Controller & {#config: controller & _controllerPatch[n]}).out {
 			object: "\(obj.kind)": "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
 		}
+	}
+
+	for ingress in c.ingress {
+		let obj = (#Ingress & {#config: ingress}).out
+		object: "\(obj.kind)": "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
 	}
 
 	// output abstracted objects along with any objects defined in #AppConfig

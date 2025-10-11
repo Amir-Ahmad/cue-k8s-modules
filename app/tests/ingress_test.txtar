@@ -1,0 +1,68 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	ingress: "foo-ingress": {
+		type: "Ingress"
+		hostnames: ["foo.example.com"]
+		serviceName: "foo-service"
+		servicePort: 80
+		spec: tls: [{hosts: hostnames}]
+	}
+
+	ingress: "foo-httproute": {
+		type: "HTTPRoute"
+		hostnames: ["foo.example.com"]
+		serviceName: "foo-service"
+		servicePort: 80
+		spec: parentRefs: [{
+			name: "internal"
+		}]
+	}
+
+}}).out
+
+-- golden.yaml --
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: foo-ingress
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+  spec:
+    tls:
+      - hosts:
+          - foo.example.com
+    rules:
+      - host: foo.example.com
+        http:
+          paths:
+            - backend:
+                service:
+                  name: foo-service
+                  port:
+                    number: 80
+              path: /
+              pathType: Prefix
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    name: foo-httproute
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+  spec:
+    hostnames:
+      - foo.example.com
+    backendRefs:
+      - name: foo-service
+        port: 80
+    parentRefs:
+      - name: internal
