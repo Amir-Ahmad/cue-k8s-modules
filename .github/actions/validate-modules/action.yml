@@ -19,7 +19,7 @@ runs:
     - name: Setup CUE
       uses: cue-lang/setup-cue@v1.0.1
       with:
-        version: 'v0.14.0'
+        version: 'v0.15.0-alpha.2'
 
     - name: Setup Timoni
       if: inputs.is-timoni == 'true'
