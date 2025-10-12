@@ -70,8 +70,10 @@ package main
 values: {
 	controller: nginx: {
 		type: "Deployment"
-		pod: image: "nginx:latest"
-		pod: ports: http: port: 8080
+		container: nginx: {
+			image: "nginx:latest"
+			port: http: port: 8080
+		}
 		// spec directly sets properties of the controller, in this case Deployment
 		spec: replicas: 1
 	}
