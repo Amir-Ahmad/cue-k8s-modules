@@ -102,10 +102,12 @@ import (
 
 #Metadata: meta_v1.#ObjectMeta
 
-#VolumeMount:   core_v1.#VolumeMount
-#Probe:         core_v1.#Probe
-#Resources:     core_v1.#ResourceRequirements
-#EnvFromSource: core_v1.#EnvFromSource
+#VolumeMount:     core_v1.#VolumeMount
+#Probe:           core_v1.#Probe
+#Resources:       core_v1.#ResourceRequirements
+#EnvFromSource:   core_v1.#EnvFromSource
+#Container:       core_v1.#Container
+#PodTemplateSpec: core_v1.#PodTemplateSpec
 
 #Object: {
 	// set some fields as mandatory.

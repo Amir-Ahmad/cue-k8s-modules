@@ -10,9 +10,9 @@ out: (#App & {config: {
 
 	controller: api: {
 		type: "Deployment"
-		pod: {
+		container: api: {
 			image: "api:v2.1.0"
-			ports: {
+			port: {
 				http: {
 					port: 8000
 					expose: true
@@ -55,7 +55,6 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: api
           app.kubernetes.io/component: api
-        annotations: {}
       spec:
         containers:
           - name: api
@@ -74,7 +73,6 @@ out: (#App & {config: {
                 value: "9090"
               - name: ENV
                 value: production
-            imagePullPolicy: IfNotPresent
 - apiVersion: v1
   kind: Service
   metadata:

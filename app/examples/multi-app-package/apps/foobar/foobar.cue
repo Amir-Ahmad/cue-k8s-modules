@@ -7,39 +7,48 @@ app: foobar: {
 
 	controller: first: {
 		type: "Deployment"
-		pod: image: "foobar:latest"
-		pod: ports: http: port: 5050
+		container: main: {
+			image: "foobar:latest"
+			port: http: port: 5050
+			envFrom: [{secretRef: name: "foo-secret"}]
+		}
 	}
 
 	controller: "foo-sts": {
+		metadata: namespace: "sts"
 		type: "StatefulSet"
-		pod: image: "second:latest"
-		pod: ports: http: {
-			type:     "NodePort"
-			nodePort: 30000
-			port:     6060
+		container: main: {
+			image: "second:latest"
+			port: http: {
+				type:     "NodePort"
+				nodePort: 30000
+				port:     6060
+			}
 		}
 	}
 
 	controller: "foo-third": {
 		type: "Deployment"
-		pod: image: "third:latest"
-		pod: ports: http: {
-			type:     "HostPort"
-			hostPort: 80
-			port:     7070
+		container: main: {
+			image: "third:1.0.0"
+			env: ENVIRONMENT: "staging"
+		}
+		// Create an emptydir volume and mount at "/data"
+		volume: "data": {
+			spec: emptyDir: {}
+			mount: main: "/data": {}
 		}
 	}
 
 	controller: "foo-cronjob": {
 		type: "CronJob"
-		pod: image:     "cronjob:v1"
+		container: main: image: "cronjob:v1"
 		spec: schedule: "*/15 * * * *"
 	}
 
 	controller: "foo-job": {
 		type: "Job"
-		pod: image: "job:v1"
+		container: main: image: "job:v1"
 	}
 
 	object: namespaced: PersistentVolumeClaim: "foo-pvc": spec: {

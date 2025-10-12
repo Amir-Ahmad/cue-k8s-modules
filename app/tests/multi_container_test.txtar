@@ -10,49 +10,41 @@ out: (#App & {config: {
 
 	controller: app: {
 		type: "Deployment"
-		pod: {
-			// Main container
-			containerName: "app"
+		container: app: {
 			image: "app:v1.2.3"
 			command: ["/bin/sh", "-c", "sleep 3600"]
 			args: ["--verbose"]
-			ports: {
+			port: {
 				http: {
-					port: 8080
+					port:   8080
 					expose: true
 				}
 				grpc: {
-					port: 9090
+					port:   9090
 					expose: false
 				}
 			}
 			env: {
-				APP_ENV: "production"
+				APP_ENV:      "production"
 				DATABASE_URL: "postgres://..."
-				REDIS_URL: null  // will be omitted
 			}
 			resources: {
 				requests: {
-					cpu: "100m"
+					cpu:    "100m"
 					memory: "128Mi"
 				}
 				limits: {
-					cpu: "500m"
+					cpu:    "500m"
 					memory: "512Mi"
 				}
 			}
-			volumeMounts: _ | *[{
-				name: "app-config"
-				mountPath: "/etc/config"
-				readOnly: true
-			}]
 			readinessProbe: {
 				httpGet: {
 					path: "/health"
 					port: 8080
 				}
 				initialDelaySeconds: 10
-				periodSeconds: 5
+				periodSeconds:       5
 			}
 			livenessProbe: {
 				httpGet: {
@@ -60,75 +52,54 @@ out: (#App & {config: {
 					port: 8080
 				}
 				initialDelaySeconds: 30
-				periodSeconds: 10
-			}
-
-			// Init containers
-			initContainers: {
-				migration: {
-					containerName: "migration"
-					image: "app:v1.2.3"
-					command: ["./migrate.sh"]
-					env: {
-						DATABASE_URL: "postgres://..."
-					}
-				}
-			}
-
-			// Additional containers (sidecars)
-			additionalContainers: {
-				proxy: {
-					containerName: "proxy"
-					image: "nginx:1.25"
-					ports: proxy: {
-						port: 80
-						expose: true
-					}
-					env: {
-						PROXY_TARGET: "http://localhost:8080"
-					}
-				}
-				logging: {
-					containerName: "logging"
-					image: "fluentd:v1.16"
-					env: {
-						FLUENTD_CONF: "fluent.conf"
-					}
-				}
-			}
-
-			// Volumes
-			volumes: {
-				"app-config": {
-					mounts: [{
-						name: "app-config"
-						mountPath: "/etc/config"
-						readOnly: true
-					}]
-					spec: configMap: name: "app-config"
-				}
-				"app-logs": {
-					mounts: [{
-						name: "app-logs"
-						mountPath: "/var/log/app"
-					}]
-					spec: emptyDir: {}
-				}
-			}
-
-			// Additional pod spec
-			spec: {
-				restartPolicy: "Always"
-				serviceAccountName: "app-service-account"
+				periodSeconds:       10
 			}
 		}
+
+		// Additional containers (sidecars)
+		container: proxy: {
+			image: "nginx:1.25"
+			port: proxy: port: 80
+			env: PROXY_TARGET: "http://localhost:8080"
+		}
+
+		container: logging: {
+			image: "fluentd:v1.16"
+			env: FLUENTD_CONF: "fluent.conf"
+		}
+
+		// Init containers
+		initContainer: migration: {
+			image: "app:v1.2.3"
+			command: ["./migrate.sh"]
+			env: DATABASE_URL: "postgres://..."
+		}
+
+		// Volumes
+		volume: {
+			"app-config": {
+				mount: "app": "/etc/config": readOnly: true
+				spec: configMap: name: "app-config"
+			}
+			"app-logs": {
+				mount: logging: "/var/log/app": {}
+				spec: emptyDir: {}
+			}
+		}
+
+		// Additional pod spec
+		pod: spec: {
+			restartPolicy:      "Always"
+			serviceAccountName: "app-service-account"
+		}
+
 		spec: {
 			replicas: 2
 			strategy: {
 				type: "RollingUpdate"
 				rollingUpdate: {
 					maxUnavailable: 1
-					maxSurge: 1
+					maxSurge:       1
 				}
 			}
 		}
@@ -155,7 +126,6 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: fullapp
           app.kubernetes.io/component: app
-        annotations: {}
       spec:
         volumes:
           - name: app-config
@@ -171,7 +141,6 @@ out: (#App & {config: {
             env:
               - name: DATABASE_URL
                 value: postgres://...
-            imagePullPolicy: IfNotPresent
         containers:
           - name: app
             image: app:v1.2.3
@@ -193,23 +162,6 @@ out: (#App & {config: {
                 value: production
               - name: DATABASE_URL
                 value: postgres://...
-            imagePullPolicy: IfNotPresent
-            livenessProbe:
-              httpGet:
-                path: /health
-                port: 8080
-              initialDelaySeconds: 30
-              timeoutSeconds: 2
-              periodSeconds: 10
-              failureThreshold: 5
-            readinessProbe:
-              httpGet:
-                path: /health
-                port: 8080
-              initialDelaySeconds: 10
-              timeoutSeconds: 2
-              periodSeconds: 5
-              failureThreshold: 5
             resources:
               limits:
                 cpu: 500m
@@ -218,14 +170,21 @@ out: (#App & {config: {
                 cpu: 100m
                 memory: 128Mi
             volumeMounts:
-              - name: app-config
-                mountPath: /etc/config
+              - mountPath: /etc/config
+                name: app-config
                 readOnly: true
-              - name: app-logs
-                mountPath: /var/log/app
-              - name: app-config
-                mountPath: /etc/config
-                readOnly: true
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 30
+              periodSeconds: 10
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: 8080
+              initialDelaySeconds: 10
+              periodSeconds: 5
           - name: proxy
             image: nginx:1.25
             ports:
@@ -235,13 +194,14 @@ out: (#App & {config: {
             env:
               - name: PROXY_TARGET
                 value: http://localhost:8080
-            imagePullPolicy: IfNotPresent
           - name: logging
             image: fluentd:v1.16
             env:
               - name: FLUENTD_CONF
                 value: fluent.conf
-            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /var/log/app
+                name: app-logs
         restartPolicy: Always
         serviceAccountName: app-service-account
     strategy:
@@ -263,6 +223,10 @@ out: (#App & {config: {
         port: 8080
         protocol: TCP
         targetPort: 8080
+      - name: proxy
+        port: 80
+        protocol: TCP
+        targetPort: 80
     selector:
       app.kubernetes.io/name: fullapp
       app.kubernetes.io/component: app

@@ -12,7 +12,7 @@ abstracted_app=app: [Name=string]: pkg_app.#AppConfig & {
 		if X.type == "Deployment" || X.type == "StatefulSet" {
 			spec: replicas: int | *1
 		}
-		pod: env: TZ: string | null | *"Australia/Sydney"
+		container: [string]: env: TZ: string | null | *"Australia/Sydney"
 	}
 
 	object: namespaced: PersistentVolumeClaim: [string]: k8s.#PersistentVolumeClaim & {

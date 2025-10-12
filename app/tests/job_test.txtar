@@ -10,7 +10,7 @@ out: (#App & {config: {
 
 	controller: migration: {
 		type: "Job"
-		pod: {
+		container: migration: {
 			image: "migrate/migrate:v4.16.2"
 			command: ["migrate", "-path", "/migrations", "-database", "postgres://..."]
 			env: {
@@ -44,7 +44,6 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: migration
           app.kubernetes.io/component: migration
-        annotations: {}
       spec:
         containers:
           - name: migration
@@ -60,4 +59,3 @@ out: (#App & {config: {
                 value: postgres://user:pass@postgres:5432/db
               - name: MIGRATION_PATH
                 value: /migrations
-            imagePullPolicy: IfNotPresent

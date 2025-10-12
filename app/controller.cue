@@ -12,11 +12,10 @@ import (
 #JobController:         "Job"
 #ControllerType:        #DeploymentController | #StatefulSetController | #DaemonSetController | #CronJobController | #JobController
 
-#ControllerCommon: {
+#ControllerConfig: X={
 	type!:    #ControllerType
 	metadata: k8s.#Metadata
 	pod:      #PodConfig
-	selectorLabels: [string]: string
 
 	// set spec of controller directly
 	spec: {...}
@@ -24,40 +23,26 @@ import (
 	// A minimal service is automatically created when there is 1+ exposed port.
 	// service.spec or service.metadata can be specified here for additional customisation.
 	service: #ServiceConfig
-}
 
-#ControllerConfig: {
-	type!: #ControllerType
+	// volume, container and initContainer are a port of #PodConfig but for ease of use,
+	// they can be specified directly in the controller.
+	container:     #PodConfig.container
+	initContainer: #PodConfig.initContainer
+	volume:        #PodConfig.volume
 
-	if type == #DeploymentController {#DeploymentConfig}
-	if type == #StatefulSetController {#StatefulSetConfig}
-	if type == #DaemonSetController {#DaemonSetConfig}
-	if type == #CronJobController {#CronJobConfig}
-	if type == #JobController {#JobConfig}
-}
+	// Pass through containers and volumes to pod spec.
+	pod: {
+		container:     X.container
+		initContainer: X.initContainer
+		volume:        X.volume
+	}
 
-#DeploymentConfig: {
-	#ControllerCommon
-}
-
-#DaemonSetConfig: {
-	#ControllerCommon
-}
-
-#StatefulSetConfig: {
-	#ControllerCommon
-}
-
-#CronJobConfig: {
-	#ControllerCommon
-}
-
-#JobConfig: {
-	#ControllerCommon
+	// selectorLabels are used to uniquely. identify the workload.
+	selectorLabels: [string]: string
 }
 
 #Deployment: {
-	c=#config: #DeploymentConfig
+	c=#config: #ControllerConfig
 
 	out: k8s.#Deployment & {
 		metadata: c.metadata
@@ -66,15 +51,12 @@ import (
 			selector: matchLabels: c.selectorLabels
 		} & c.spec
 
-		spec: template: {
-			metadata: labels: c.pod.labels
-			#Pod & {#config: c.pod}
-		}
+		spec: template: (#PodTemplate & {#config: c.pod}).out
 	}
 }
 
 #DaemonSet: {
-	c=#config: #DaemonSetConfig
+	c=#config: #ControllerConfig
 
 	out: k8s.#DaemonSet & {
 		metadata: c.metadata
@@ -83,15 +65,12 @@ import (
 			selector: matchLabels: c.selectorLabels
 		} & c.spec
 
-		spec: template: {
-			metadata: labels: c.pod.labels
-			#Pod & {#config: c.pod}
-		}
+		spec: template: (#PodTemplate & {#config: c.pod}).out
 	}
 }
 
 #StatefulSet: {
-	c=#config: #StatefulSetConfig
+	c=#config: #ControllerConfig
 
 	out: k8s.#StatefulSet & {
 		metadata: c.metadata
@@ -101,46 +80,46 @@ import (
 			serviceName: c.metadata.name
 		} & c.spec
 
-		spec: template: {
-			metadata: labels: c.pod.labels
-			#Pod & {#config: c.pod}
-		}
+		spec: template: (#PodTemplate & {#config: c.pod}).out
 	}
 }
 
 #CronJob: {
-	c=#config: #CronJobConfig
+	c=#config: #ControllerConfig
 
 	out: k8s.#CronJob & {
 		metadata: c.metadata
-		spec: {
-			jobTemplate: spec: template: {
-				metadata: labels: c.pod.labels
-				#Pod & {#config: c.pod}
-			}
-		} & c.spec
+		spec:     c.spec
+
+		let podTemplate = (#PodTemplate & {#config: c.pod}).out
+		spec: jobTemplate: spec: template: podTemplate
 	}
 }
 
 #Job: {
-	c=#config: #JobConfig
+	c=#config: #ControllerConfig
 
 	out: k8s.#Job & {
 		metadata: c.metadata
-		spec: {
-			template: {
-				metadata: labels: c.pod.labels
-				#Pod & {#config: c.pod}
-			}
-		} & c.spec
+		spec:     c.spec
+
+		spec: template: (#PodTemplate & {#config: c.pod}).out
 	}
 }
 
 #Controller: {
 	c=#config: #ControllerConfig
 
-	let clusterIpPorts = [for port in c.pod.ports if port.expose == true if port.type == "ClusterIP" {port}]
-	let nodePorts = [for port in c.pod.ports if port.expose == true if port.type == "NodePort" {port}]
+	let clusterIpPorts = [
+		for container in c.container
+		for p in container.port
+		if p.expose == true if p.type == "ClusterIP" {p},
+	]
+	let nodePorts = [
+		for container in c.container
+		for p in container.port
+		if p.expose == true if p.type == "NodePort" {p},
+	]
 	let combinedPorts = list.Concat([clusterIpPorts, nodePorts])
 
 	out: [

@@ -10,12 +10,9 @@ out: (#App & {config: {
 
 	controller: postgres: {
 		type: "StatefulSet"
-		pod: {
+		container: postgres: {
 			image: "postgres:15"
-			ports: postgres: {
-				port: 5432
-				expose: true
-			}
+			port: postgres: port: 5432
 			env: {
 				POSTGRES_DB: "mydb"
 				POSTGRES_USER: "user"
@@ -55,7 +52,6 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: postgres
           app.kubernetes.io/component: postgres
-        annotations: {}
       spec:
         containers:
           - name: postgres
@@ -71,7 +67,6 @@ out: (#App & {config: {
                 value: user
               - name: POSTGRES_PASSWORD
                 value: secret
-            imagePullPolicy: IfNotPresent
     volumeClaimTemplates:
       - metadata:
           name: data

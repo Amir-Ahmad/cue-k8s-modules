@@ -1,0 +1,26 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/pod.cue --
+package app
+
+out: (#PodTemplate & {#config: {
+	metadata: labels: foo: "bar"
+	container: app: {
+		image: "nginx:latest"
+		env: ENVIRONMENT: "testing"
+	}
+}}).out
+
+-- golden.yaml --
+metadata:
+  labels:
+    foo: bar
+spec:
+  containers:
+    - name: app
+      image: nginx:latest
+      env:
+        - name: ENVIRONMENT
+          value: testing
+      imagePullPolicy: Always

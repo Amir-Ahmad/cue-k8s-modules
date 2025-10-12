@@ -10,9 +10,9 @@ out: (#App & {config: {
 
 	controller: foo: {
 		type: "Deployment"
-		pod: {
+		container: foo: {
 			image: "foobar:v2.1.0"
-			ports: http: port: 8000
+			port: http: port: 8000
 		}
 		spec: replicas: 1
 
@@ -43,7 +43,6 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: foo
           app.kubernetes.io/component: foo
-        annotations: {}
       spec:
         containers:
           - name: foo
@@ -53,7 +52,6 @@ out: (#App & {config: {
                 containerPort: 8000
                 protocol: TCP
             env: []
-            imagePullPolicy: IfNotPresent
 - apiVersion: v1
   kind: Service
   metadata:

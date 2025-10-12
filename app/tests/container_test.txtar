@@ -1,0 +1,44 @@
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/container.cue --
+package app
+
+out: (#Container & {#config: {
+	name: "foobar"
+    image: "foobar:1.0.0"
+
+    command: ["/app"]
+
+    env: ENVIRONMENT: "production"
+    envSecret: FOO_TOKEN: secret: "foobar"
+    envFrom: [{secretRef: name: "additional-secrets"}]
+
+    port: http: port: 8080
+
+    volumeMount: "/config": name: "config"
+}}).out
+
+-- golden.yaml --
+name: foobar
+image: foobar:1.0.0
+command:
+  - /app
+ports:
+  - name: http
+    containerPort: 8080
+    protocol: TCP
+envFrom:
+  - secretRef:
+      name: additional-secrets
+env:
+  - name: ENVIRONMENT
+    value: production
+  - name: FOO_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: foobar
+        key: FOO_TOKEN
+volumeMounts:
+  - name: config
+    mountPath: /config

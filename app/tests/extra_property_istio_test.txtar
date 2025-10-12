@@ -10,7 +10,7 @@ app: [Name=string]: #AppConfig & {
 	x: enableIstio: bool | *false
 
 	if x.enableIstio {
-		controller: [string]:  pod: labels: "sidecar.istio.io/inject": "true"
+		controller: [string]: pod: metadata: labels: "sidecar.istio.io/inject": "true"
 	}
 }
 
@@ -28,8 +28,8 @@ app: foo: {
 
 	controller: foobar: {
 		type: "Deployment"
-		pod: image: "foobar:latest"
-		pod: ports: http: port: 5050
+		container: main: image: "foobar:latest"
+		container: main: port: http: port: 5050
 	}
 }
 
@@ -53,10 +53,9 @@ app: foo: {
           app.kubernetes.io/name: foo
           app.kubernetes.io/component: foobar
           sidecar.istio.io/inject: "true"
-        annotations: {}
       spec:
         containers:
-          - name: foobar
+          - name: main
             image: foobar:latest
             ports:
               - name: http

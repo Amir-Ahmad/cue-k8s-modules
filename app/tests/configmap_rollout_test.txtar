@@ -31,27 +31,19 @@ out: (#App & {config: {
 
 	controller: webapp: {
 		type: "Deployment"
-		pod: {
+		container: webapp: {
 			image: "webapp:v1.0.0"
-			ports: http: {
-				port: 8080
-				expose: true
-			}
-			env: {
-				CONFIG_FILE: "/config/app.yaml"
-			}
+			port: http: port: 8080
+			env: CONFIG_FILE: "/config/app.yaml"
 		}
 		spec: replicas: 2
 	}
 
 	controller: nginx: {
 		type: "Deployment"
-		pod: {
+		container: nginx: {
 			image: "nginx:1.25"
-			ports: http: {
-				port: 80
-				expose: true
-			}
+			port: http: port: 80
 		}
 		spec: replicas: 1
 	}
@@ -99,7 +91,6 @@ out: (#App & {config: {
           app.kubernetes.io/name: webapp
           app.kubernetes.io/component: webapp
           config/appconfig/checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
-        annotations: {}
       spec:
         containers:
           - name: webapp
@@ -111,7 +102,6 @@ out: (#App & {config: {
             env:
               - name: CONFIG_FILE
                 value: /config/app.yaml
-            imagePullPolicy: IfNotPresent
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -132,7 +122,6 @@ out: (#App & {config: {
           app.kubernetes.io/name: webapp
           app.kubernetes.io/component: nginx
           config/appconfig/checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
-        annotations: {}
       spec:
         containers:
           - name: nginx
@@ -142,7 +131,6 @@ out: (#App & {config: {
                 containerPort: 80
                 protocol: TCP
             env: []
-            imagePullPolicy: IfNotPresent
 - apiVersion: v1
   kind: Service
   metadata:

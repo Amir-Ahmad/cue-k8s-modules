@@ -10,7 +10,7 @@ out: (#App & {config: {
 
 	controller: backup: {
 		type: "CronJob"
-		pod: {
+		container: main: {
 			image: "alpine:3.18"
 			command: ["/bin/sh", "-c", "echo 'Running backup...'"]
 			env: {
@@ -44,10 +44,9 @@ out: (#App & {config: {
             labels:
               app.kubernetes.io/name: backup
               app.kubernetes.io/component: backup
-            annotations: {}
           spec:
             containers:
-              - name: backup
+              - name: main
                 image: alpine:3.18
                 command:
                   - /bin/sh
@@ -58,6 +57,5 @@ out: (#App & {config: {
                     value: /backups
                   - name: RETENTION_DAYS
                     value: "7"
-                imagePullPolicy: IfNotPresent
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 1

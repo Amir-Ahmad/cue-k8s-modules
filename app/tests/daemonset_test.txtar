@@ -10,20 +10,15 @@ out: (#App & {config: {
 
 	controller: fluentd: {
 		type: "DaemonSet"
-		pod: {
+		container: main: {
 			image: "fluentd:v1.16-1"
-			ports: forward: {
-				port: 24224
-				expose: true
-			}
+			port: forward: port: 24224
 			env: {
 				FLUENTD_CONF: "fluent.conf"
 				FLUENTD_OPT: "-v"
 			}
 		}
-		spec: {
-			updateStrategy: type: "RollingUpdate"
-		}
+		spec: updateStrategy: type: "RollingUpdate"
 	}
 }}).out
 
@@ -46,10 +41,9 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: fluentd
           app.kubernetes.io/component: fluentd
-        annotations: {}
       spec:
         containers:
-          - name: fluentd
+          - name: main
             image: fluentd:v1.16-1
             ports:
               - name: forward
@@ -60,7 +54,6 @@ out: (#App & {config: {
                 value: fluent.conf
               - name: FLUENTD_OPT
                 value: -v
-            imagePullPolicy: IfNotPresent
     updateStrategy:
       type: RollingUpdate
 - apiVersion: v1

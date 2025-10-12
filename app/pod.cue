@@ -1,189 +1,63 @@
 package app
 
 import (
-	"strings"
-	"list"
 	"github.com/amir-ahmad/cue-k8s-modules/app/k8s"
 )
 
 #PodConfig: {
-	#ContainerConfig
+	metadata: k8s.#Metadata
 
-	labels: {...}
-
-	annotations: {...}
-
-	// List of initContainers
-	initContainers: [Name=string]: #ContainerConfig & {containerName: Name}
-
-	// List of AdditionalContainers
-	additionalContainers: [Name=string]: #ContainerConfig & {containerName: Name}
-
-	// List of volumes. These will be associated to the Pod,
-	// and mounted to the primary container if mounts are provided.
-	volumes: [Name=string]: {
-		name: string | *Name
-		mounts: [...k8s.#VolumeMount & {name: Name}]
-		spec: {...}
+	container: [N=string]: #ContainerConfig & {
+		name: string | *N
+		for v in volume for c, cMounts in v.mount for path, mount in cMounts if N == c {
+			volumeMount: (path): mount
+		}
+	}
+	initContainer: [N=string]: #ContainerConfig & {
+		name: string | *N
+		for v in volume for c, cMounts in v.mount for path, mount in cMounts if N == c {
+			volumeMount: (path): mount
+		}
 	}
 
-	// additional pod properties
+	volume: [N=string]: X={
+		name: *N | string
+		spec: {...}
+
+		// Mount the volume to a container using its name.
+		// e.g. `mount: app: "/config": {}` will mount the volume to app container at "/config".
+		mount: [Container=string]: [Path=string]: k8s.#VolumeMount & {
+			mountPath: Path
+			name:      X.name
+		}
+	}
+
+	// Any other pod spec can be set here.
 	spec: {...}
 }
 
-#ContainerConfig: {
-	containerName!:  string
-	image!:          string
-	imagePullPolicy: "IfNotPresent" | "Always" | "Never"
-	if image != _|_ {
-		if strings.HasSuffix(image, ":latest") == true {
-			imagePullPolicy: "IfNotPresent" | *"Always" | "Never"
-		}
-		if strings.HasSuffix(image, ":latest") != true {
-			imagePullPolicy: *"IfNotPresent" | "Always" | "Never"
-		}
-	}
-
-	// Container command and args
-	command: [...string]
-	args: [...string]
-
-	// List of environment variables.
-	env: [string]: string | null
-
-	// Set container environment variables from configmap or secret
-	envFrom: [...k8s.#EnvFromSource]
-
-	envSecret: [N=string]: {
-		// Name of the envvar to inject
-		name: *N | string
-
-		// Secret name
-		secret: string
-
-		// Property within the secret.
-		secretKey: *N | string
-	}
-
-	// Resources requirements / limits
-	resources?: k8s.#Resources
-
-	// List of volume mounts
-	volumeMounts: [...k8s.#VolumeMount]
-
-	// List of ports on the app
-	ports: [Name=string]: #Port & {name: Name}
-
-	containerSecurityContext?: _
-
-	// Add probes
-	livenessProbe?:  #Probe
-	readinessProbe?: #Probe
-	startupProbe?:   #Probe
-}
-
-#Probe: k8s.#Probe & {
-	timeoutSeconds:   int | *2
-	failureThreshold: int | *5
-}
-
-#Pod: {
+#PodTemplate: {
 	c=#config: #PodConfig
 
-	metadata: labels: c.labels
+	out: k8s.#PodTemplateSpec & {
+		metadata: c.metadata
+		spec: c.spec & {
+			containers: [
+				for x in c.container {(#Container & {#config: {x}}).out},
+			]
 
-	metadata: annotations: c.annotations
+			if len (c.initContainer) > 0 {
+				initContainers: [
+					for x in c.initContainer {(#Container & {#config: {x}}).out},
+				]
+			}
 
-	spec: containers: [{
-		#Container & {
-			#config: c & {
-				volumeMounts: list.Concat([[for v in c.volumes for m in v.mounts {m}], c.volumeMounts])
+			if len(c.volume) > 0 {
+				volumes: [for v in c.volume {
+					name: v.name
+					v.spec
+				}]
 			}
 		}
-	},
-		for v in c.additionalContainers {
-			#Container & {#config: v}
-		},
-	]
-
-	if len(c.initContainers) > 0 {
-		spec: initContainers: [for _, v in c.initContainers {
-			#Container & {#config: v}
-		}]
-	}
-
-	if len(c.volumes) > 0 {
-		spec: volumes: [for k, v in c.volumes {
-			name: k
-			v.spec
-		}]
-	}
-
-	spec: c.spec
-}
-
-#Container: {
-	c=#config: {#ContainerConfig, ...}
-
-	name:  c.containerName
-	image: c.image
-
-	imagePullPolicy: c.imagePullPolicy
-
-	if len(c.command) > 0 {
-		command: c.command
-	}
-
-	if len(c.args) > 0 {
-		args: c.args
-	}
-
-	if len(c.ports) > 0 {
-		ports: [for k, v in c.ports {
-			name:          k
-			containerPort: v.port
-			protocol:      v.protocol
-			if v.hostPort != _|_ {
-				hostPort: v.hostPort
-			}
-		}]
-	}
-
-	if c.containerSecurityContext != _|_ {
-		securityContext: c.containerSecurityContext
-	}
-
-	if len(c.envFrom) > 0 {
-		envFrom: c.envFrom
-	}
-
-	env: list.Concat([
-		[for k, v in c.env if v != null {name: k, value: v}],
-		[for v in c.envSecret {
-			name: v.name
-			valueFrom: secretKeyRef: {
-				name: v.secret
-				key:  v.secretKey
-			}
-		}],
-	])
-
-	if len(c.volumeMounts) > 0 {
-		volumeMounts: c.volumeMounts
-	}
-
-	if c.resources != _|_ {
-		resources: c.resources
-	}
-
-	// Add probes
-	if c.livenessProbe != _|_ {
-		livenessProbe: c.livenessProbe
-	}
-	if c.readinessProbe != _|_ {
-		readinessProbe: c.readinessProbe
-	}
-	if c.startupProbe != _|_ {
-		startupProbe: c.startupProbe
 	}
 }

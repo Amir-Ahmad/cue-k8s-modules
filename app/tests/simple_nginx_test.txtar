@@ -10,8 +10,10 @@ out: (#App & {config: {
 
 	controller: nginx: {
 		type: "Deployment"
-		pod: image: "nginx:latest"
-		pod: ports: http: port: 8080
+		container: nginx: {
+			image: "nginx:latest"
+			port: http: port: 8080
+		}
 		spec: replicas: 1
 	}
 }}).out
@@ -36,7 +38,6 @@ out: (#App & {config: {
         labels:
           app.kubernetes.io/name: nginx
           app.kubernetes.io/component: nginx
-        annotations: {}
       spec:
         containers:
           - name: nginx

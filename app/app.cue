@@ -43,30 +43,36 @@ import (
 		labels:    X.common.labels
 	}
 
-	controller: [n=string]: #ControllerConfig & {
+	controller: [n=string]: C={
 		metadata: commonMetadata & {
 			name:   string | *n
 			labels: selectorLabels
 		}
 
 		service: metadata: commonMetadata & {
-			name:   string | *n
-			labels: selectorLabels
+			name:      string | *n
+			namespace: C.metadata.namespace
+			labels:    selectorLabels
 		}
 
-		pod: {
-			containerName: string | *n
-			labels:        common.podLabels & selectorLabels
-		}
+		pod: metadata: labels: common.podLabels & selectorLabels
 
 		selectorLabels: {
 			"app.kubernetes.io/name":      X.name
 			"app.kubernetes.io/component": n
 		}
-	}
+	} & #ControllerConfig
 
 	configmap: [n=string]: #ConfigMapConfig & {
 		metadata: commonMetadata & {name: string | *n}
+	}
+
+	// When rollControllers is set, add a checksum to force a restart whenever configmap changes.
+	for k, v in configmap if len(v.rollControllers) > 0 {
+		let _checksum = base64.Encode(null, sha256.Sum256(json.Marshal(v.data)))
+		for cont in v.rollControllers {
+			controller: (cont): pod: metadata: labels: "config/\(k)/checksum": _checksum
+		}
 	}
 
 	// Ingress is a simple abstraction over HTTPRoute or Ingress,
@@ -90,25 +96,14 @@ import (
 	// k8s objects in format Kind: Namespace: Name: {}
 	object: [string]: [string]: [string]: k8s.#Object
 
-	// map of per controller config generated here and unified with controller config
-	_controllerPatch: [string]: #ControllerCommon
-
 	for n, cmap in c.configmap {
 		let obj = (#ConfigMap & {#config: cmap}).out
 		object: ConfigMap: "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
-		let _checksum = base64.Encode(null, sha256.Sum256(json.Marshal(cmap.data)))
-
-		// add configmap checksum to automatically restart pods of controllers
-		for cont in cmap.rollControllers {
-			_controllerPatch: "\(cont)": pod: labels: "config/\(n)/checksum": _checksum
-		}
 	}
 
 	for n, controller in c.controller {
-		_controllerPatch: "\(n)": #ControllerCommon
-
 		// Add controller objects
-		for obj in (#Controller & {#config: controller & _controllerPatch[n]}).out {
+		for obj in (#Controller & {#config: controller}).out {
 			object: "\(obj.kind)": "\(obj.metadata.namespace)": "\(obj.metadata.name)": obj
 		}
 	}
