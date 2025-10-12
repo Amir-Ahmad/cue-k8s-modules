@@ -75,7 +75,7 @@ func TestScript(t *testing.T) {
 		moduleName := getModuleName(t, repoRoot, dir)
 		modulePath := filepath.Join(repoRoot, moduleName)
 
-		t.Run(dir, func(t *testing.T) {
+		t.Run(strings.TrimPrefix(dir, "/"), func(t *testing.T) {
 			testscript.Run(t, testscript.Params{
 				Setup:         setupTestEnvironment(modCache, modulePath),
 				Dir:           dir,
