@@ -6,7 +6,7 @@ import (
 	gateway_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/gateway.networking.k8s.io/v1"
 )
 
-#ObjectMap: [T=("namespaced" | "clusterscoped")]: [K=string]: [N=string]: {
+#ObjectMap: ["namespaced" | "clusterscoped"]: [K=string]: [N=string]: k8s.#Object & {
 	kind: string | *K
 	metadata: name: string | *N
 }

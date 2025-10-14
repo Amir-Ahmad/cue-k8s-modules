@@ -29,10 +29,10 @@ out: (#App & {config: {
 - apiVersion: monitoring.coreos.com/v1
   kind: ServiceMonitor
   metadata:
-    labels:
-      app.kubernetes.io/name: monitoring
     name: prometheus-sm
     namespace: monitoring
+    labels:
+      app.kubernetes.io/name: monitoring
   spec:
     selector:
       matchLabels:
