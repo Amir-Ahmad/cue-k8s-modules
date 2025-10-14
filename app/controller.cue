@@ -37,8 +37,12 @@ import (
 		volume:        X.volume
 	}
 
-	// selectorLabels are used to uniquely. identify the workload.
+	// selectorLabels are used to uniquely identify the workload.
 	selectorLabels: [string]: string
+
+	// Any additional fields or properties can be set under `x:`
+	// This allows for additional abstractions and logic that is specific to your use case.
+	x: {...}
 }
 
 #Deployment: {

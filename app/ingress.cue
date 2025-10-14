@@ -18,6 +18,10 @@ import (
 
 	// Allow directly specifying any property of ingress/httproute at spec.
 	spec: {...}
+
+	// Any additional fields or properties can be set under `x:`
+	// This allows for additional abstractions and logic that is specific to your use case.
+	x: {...}
 }
 
 #Ingress: {
