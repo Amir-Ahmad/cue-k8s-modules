@@ -17,7 +17,7 @@ out: (#App & {config: {
 				port: http: port: 8080
 			}
 			spec: replicas: 1
-			volume: fooconfig: spec: hostPath: {
+			volume: fooconfig: hostPath: {
 				path: "dummy/path"
 				type: "DirectoryOrCreate"
 			}

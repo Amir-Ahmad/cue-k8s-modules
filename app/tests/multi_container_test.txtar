@@ -79,11 +79,11 @@ out: (#App & {config: {
 		volume: {
 			"app-config": {
 				mount: "app": "/etc/config": readOnly: true
-				spec: configMap: name: "app-config"
+				configMap: name: "app-config"
 			}
 			"app-logs": {
 				mount: logging: "/var/log/app": {}
-				spec: emptyDir: {}
+				emptyDir: {}
 			}
 		}
 

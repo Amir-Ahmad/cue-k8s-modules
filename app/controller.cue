@@ -12,7 +12,7 @@ import (
 #JobController:         "Job"
 #ControllerType:        #DeploymentController | #StatefulSetController | #DaemonSetController | #CronJobController | #JobController
 
-#ControllerConfig: X={
+#ControllerConfig: {
 	type!:    #ControllerType
 	metadata: k8s.#Metadata
 	pod:      #PodConfig
@@ -29,13 +29,6 @@ import (
 	container:     #PodConfig.container
 	initContainer: #PodConfig.initContainer
 	volume:        #PodConfig.volume
-
-	// Pass through containers and volumes to pod spec.
-	pod: {
-		container:     X.container
-		initContainer: X.initContainer
-		volume:        X.volume
-	}
 
 	// selectorLabels are used to uniquely identify the workload.
 	selectorLabels: [string]: string
@@ -55,7 +48,11 @@ import (
 			selector: matchLabels: c.selectorLabels
 		} & c.spec
 
-		spec: template: (#PodTemplate & {#config: c.pod}).out
+		spec: template: (#PodTemplate & {#config: c.pod & {
+			volume:        c.volume
+			container:     c.container
+			initContainer: c.initContainer
+		}}).out
 	}
 }
 
@@ -69,7 +66,11 @@ import (
 			selector: matchLabels: c.selectorLabels
 		} & c.spec
 
-		spec: template: (#PodTemplate & {#config: c.pod}).out
+		spec: template: (#PodTemplate & {#config: c.pod & {
+			volume:        c.volume
+			container:     c.container
+			initContainer: c.initContainer
+		}}).out
 	}
 }
 
@@ -84,7 +85,11 @@ import (
 			serviceName: c.metadata.name
 		} & c.spec
 
-		spec: template: (#PodTemplate & {#config: c.pod}).out
+		spec: template: (#PodTemplate & {#config: c.pod & {
+			volume:        c.volume
+			container:     c.container
+			initContainer: c.initContainer
+		}}).out
 	}
 }
 
@@ -95,8 +100,11 @@ import (
 		metadata: c.metadata
 		spec:     c.spec
 
-		let podTemplate = (#PodTemplate & {#config: c.pod}).out
-		spec: jobTemplate: spec: template: podTemplate
+		spec: jobTemplate: spec: template: (#PodTemplate & {#config: c.pod & {
+			volume:        c.volume
+			container:     c.container
+			initContainer: c.initContainer
+		}}).out
 	}
 }
 
@@ -107,7 +115,11 @@ import (
 		metadata: c.metadata
 		spec:     c.spec
 
-		spec: template: (#PodTemplate & {#config: c.pod}).out
+		spec: template: (#PodTemplate & {#config: c.pod & {
+			volume:        c.volume
+			container:     c.container
+			initContainer: c.initContainer
+		}}).out
 	}
 }
 

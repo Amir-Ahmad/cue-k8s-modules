@@ -35,7 +35,7 @@ app: foobar: {
 		}
 		// Create an emptydir volume and mount at "/data"
 		volume: "data": {
-			spec: emptyDir: {}
+			emptyDir: {}
 			mount: main: "/data": {}
 		}
 	}

@@ -22,14 +22,16 @@ import (
 
 	volume: [N=string]: X={
 		name: *N | string
-		spec: {...}
-
 		// Mount the volume to a container using its name.
 		// e.g. `mount: app: "/config": {}` will mount the volume to app container at "/config".
 		mount: [Container=string]: [Path=string]: k8s.#VolumeMount & {
 			mountPath: Path
 			name:      X.name
 		}
+
+		// allow any property to be sent through in the exact same format as k8s.
+		// e.g. emptyDir: {}
+		...
 	}
 
 	// Any other pod spec can be set here.
@@ -46,17 +48,23 @@ import (
 				for x in c.container {(#Container & {#config: {x}}).out},
 			]
 
-			if len (c.initContainer) > 0 {
-				initContainers: [
-					for x in c.initContainer {(#Container & {#config: {x}}).out},
-				]
+			let _initContainers = [
+				for x in c.initContainer {(#Container & {#config: {x}}).out},
+			]
+
+			if len(_initContainers) > 0 {
+				initContainers: _initContainers
 			}
 
-			if len(c.volume) > 0 {
-				volumes: [for v in c.volume {
-					name: v.name
-					v.spec
-				}]
+			let _volumes = [for vol in c.volume {
+				name: vol.name
+				for k, v in vol if k != "mount" {
+					(k): v
+				}
+			}]
+
+			if len(_volumes) > 0 {
+				volumes: _volumes
 			}
 		}
 	}
