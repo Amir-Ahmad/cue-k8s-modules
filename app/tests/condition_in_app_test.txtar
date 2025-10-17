@@ -1,0 +1,80 @@
+# This tests that we can use conditions in the app.
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	if true {
+		controller: foo: {
+			type: "Deployment"
+			container: foo: {
+				image: "foo:latest"
+				port: http: port: 8080
+			}
+			spec: replicas: 1
+			volume: fooconfig: spec: hostPath: {
+				path: "dummy/path"
+				type: "DirectoryOrCreate"
+			}
+		}
+	}
+}}).out
+
+-- golden.yaml --
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: foo
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foo
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: foo
+        app.kubernetes.io/component: foo
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: foo
+          app.kubernetes.io/component: foo
+      spec:
+        volumes:
+          - hostPath:
+              path: dummy/path
+              type: DirectoryOrCreate
+            name: fooconfig
+        containers:
+          - name: foo
+            image: foo:latest
+            ports:
+              - name: http
+                containerPort: 8080
+                protocol: TCP
+            env: []
+            imagePullPolicy: Always
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: foo
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foo
+  spec:
+    ports:
+      - name: http
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      app.kubernetes.io/name: foo
+      app.kubernetes.io/component: foo
+    type: ClusterIP
