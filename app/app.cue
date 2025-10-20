@@ -71,7 +71,7 @@ import (
 	for k, v in configmap if len(v.rollControllers) > 0 {
 		let _checksum = base64.Encode(null, sha256.Sum256(json.Marshal(v.data)))
 		for cont in v.rollControllers {
-			controller: (cont): pod: metadata: labels: "config/\(k)/checksum": _checksum
+			controller: (cont): pod: metadata: annotations: "config/\(k)/checksum": _checksum
 		}
 	}
 
