@@ -37,7 +37,7 @@ spec:
         app.kubernetes.io/name: foobar
         app.kubernetes.io/component: first
       annotations:
-        config/foobar/checksum: bW+slY5Hn17Ai0wSD6V7fTGSj8XnQ5+T1wGIqr0A2Pg=
+        config/foobar-checksum: bW+slY5Hn17Ai0wSD6V7fTGSj8XnQ5+T1wGIqr0A2Pg=
     spec:
       containers:
         - name: main

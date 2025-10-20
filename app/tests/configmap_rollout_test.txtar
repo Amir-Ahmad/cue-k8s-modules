@@ -91,7 +91,7 @@ out: (#App & {config: {
           app.kubernetes.io/name: webapp
           app.kubernetes.io/component: webapp
         annotations:
-          config/appconfig/checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
+          config/appconfig-checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
       spec:
         containers:
           - name: webapp
@@ -123,7 +123,7 @@ out: (#App & {config: {
           app.kubernetes.io/name: webapp
           app.kubernetes.io/component: nginx
         annotations:
-          config/appconfig/checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
+          config/appconfig-checksum: uRud6eAyMFNUG+YgKdT5B5/+og8TISo/Fld3tMm+QvM=
       spec:
         containers:
           - name: nginx
