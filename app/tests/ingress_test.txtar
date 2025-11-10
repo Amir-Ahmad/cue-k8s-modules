@@ -61,8 +61,13 @@ out: (#App & {config: {
   spec:
     hostnames:
       - foo.example.com
-    backendRefs:
-      - name: foo-service
-        port: 80
     parentRefs:
       - name: internal
+    rules:
+      - backendRefs:
+          - name: foo-service
+            port: 80
+        matches:
+          - path:
+              type: PathPrefix
+              value: /

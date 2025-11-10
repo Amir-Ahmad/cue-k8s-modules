@@ -53,9 +53,17 @@ import (
 	if c.type == #HTTPRouteType {
 		out: gateway_v1.#HTTPRoute & {spec: {
 			hostnames: c.hostnames
-			backendRefs: [{
-				name: c.serviceName
-				port: c.servicePort
+			rules: [{
+				matches: [{
+					path: {
+						type:  "PathPrefix"
+						value: "/"
+					}
+				}]
+				backendRefs: [{
+					name: c.serviceName
+					port: c.servicePort
+				}]
 			}]
 		}}
 	}
