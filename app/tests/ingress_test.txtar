@@ -26,6 +26,20 @@ out: (#App & {config: {
 		}]
 	}
 
+	ingress: "route-with-timeout": {
+		type: "HTTPRoute"
+		hostnames: ["foo.example.com"]
+		serviceName: "foo-service"
+		servicePort: 80
+		spec: parentRefs: [{
+			name: "internal"
+		}]
+		ruleSpec: timeouts: {
+			request: "60m"
+			backendRequest: "60m"
+		}
+	}
+
 }}).out
 
 -- golden.yaml --
@@ -71,3 +85,26 @@ out: (#App & {config: {
           - path:
               type: PathPrefix
               value: /
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    name: route-with-timeout
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+  spec:
+    hostnames:
+      - foo.example.com
+    parentRefs:
+      - name: internal
+    rules:
+      - backendRefs:
+          - name: foo-service
+            port: 80
+        matches:
+          - path:
+              type: PathPrefix
+              value: /
+        timeouts:
+          backendRequest: 60m
+          request: 60m
