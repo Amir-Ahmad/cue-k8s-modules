@@ -65,6 +65,11 @@ import (
 	kind:       "Namespace"
 }
 
+#PersistentVolume: core_v1.#PersistentVolume & {
+	apiVersion: "v1"
+	kind:       "PersistentVolume"
+}
+
 #PersistentVolumeClaim: core_v1.#PersistentVolumeClaim & {
 	apiVersion: "v1"
 	kind:       "PersistentVolumeClaim"

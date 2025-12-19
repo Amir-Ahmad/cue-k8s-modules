@@ -34,6 +34,7 @@ import (
 #ObjectMap: clusterscoped: StorageClass?: [string]:       k8s.#StorageClass
 #ObjectMap: clusterscoped: ClusterRole?: [string]:        k8s.#ClusterRole
 #ObjectMap: clusterscoped: ClusterRoleBinding?: [string]: k8s.#ClusterRoleBinding
+#ObjectMap: clusterscoped: PersistentVolume?: [string]:   k8s.#PersistentVolume
 
 // Some common CRDs
 #ObjectMap: namespaced: ExternalSecret?: [string]:           eso_v1.#ExternalSecret
