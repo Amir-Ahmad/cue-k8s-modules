@@ -794,7 +794,7 @@ import (
 						// Reason of `UnsupportedValue`.
 						//
 						// Support: Core
-						statusCode?: (301 | 302) & int
+						statusCode?: (301 | 302 | 303 | 307 | 308) & int
 					}
 
 					// ResponseHeaderModifier defines a schema for a filter that
@@ -1567,7 +1567,7 @@ import (
 					// Reason of `UnsupportedValue`.
 					//
 					// Support: Core
-					statusCode?: (301 | 302) & int
+					statusCode?: (301 | 302 | 303 | 307 | 308) & int
 				}
 
 				// ResponseHeaderModifier defines a schema for a filter that
