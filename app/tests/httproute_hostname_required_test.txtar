@@ -1,0 +1,21 @@
+# HTTPRoutes require a hostname
+! exec cue export -e out --out yaml ./apps/...
+stderr 'hostnames.*does not satisfy list.MinItems'
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	ingress: "foo-httproute": {
+		type: "HTTPRoute"
+		serviceName: "foo-service"
+		servicePort: 80
+		spec: parentRefs: [{
+			name: "internal"
+		}]
+	}
+
+}}).out

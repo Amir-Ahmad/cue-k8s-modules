@@ -1,0 +1,37 @@
+# TCPRoutes do not require hostnames.
+exec cue export -e out --out yaml ./apps/...
+cmp stdout golden.yaml
+
+-- apps/foo.cue --
+package app
+
+out: (#App & {config: {
+	name: "foo"
+	common: namespace: "default"
+
+	ingress: "foo-tcproute": {
+		type: "TCPRoute"
+		serviceName: "foo-service"
+		servicePort: 80
+		spec: parentRefs: [{
+			name: "internal"
+		}]
+	}
+
+}}).out
+
+-- golden.yaml --
+- apiVersion: gateway.networking.k8s.io/v1alpha2
+  kind: TCPRoute
+  metadata:
+    name: foo-tcproute
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+  spec:
+    parentRefs:
+      - name: internal
+    rules:
+      - backendRefs:
+          - name: foo-service
+            port: 80

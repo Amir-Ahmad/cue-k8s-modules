@@ -40,6 +40,16 @@ out: (#App & {config: {
 		}
 	}
 
+	ingress: "foo-tcproute": {
+		type: "TCPRoute"
+		serviceName: "foo-service"
+		servicePort: 80
+		spec: parentRefs: [{
+			name: "internal"
+			namespace: "envoy-gateway"
+		}]
+	}
+
 }}).out
 
 -- golden.yaml --
@@ -108,3 +118,18 @@ out: (#App & {config: {
         timeouts:
           backendRequest: 60m
           request: 60m
+- apiVersion: gateway.networking.k8s.io/v1alpha2
+  kind: TCPRoute
+  metadata:
+    name: foo-tcproute
+    namespace: default
+    labels:
+      app.kubernetes.io/name: foo
+  spec:
+    parentRefs:
+      - name: internal
+        namespace: envoy-gateway
+    rules:
+      - backendRefs:
+          - name: foo-service
+            port: 80

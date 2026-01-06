@@ -4,17 +4,23 @@ import (
 	"list"
 	"github.com/amir-ahmad/cue-k8s-modules/app/k8s"
 	gateway_v1 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/gateway.networking.k8s.io/v1"
+	gateway_v1alpha2 "github.com/amir-ahmad/cue-k8s-modules/k8s-schema/pkg/gateway.networking.k8s.io/v1alpha2"
 )
 
 #IngressType:   "Ingress"
 #HTTPRouteType: "HTTPRoute"
+#TCPRouteType:  "TCPRoute"
 
 #IngressConfig: {
-	type!:    #IngressType | #HTTPRouteType
+	type!:    #IngressType | #HTTPRouteType | #TCPRouteType
 	metadata: k8s.#Metadata
-	hostnames: [...string] & list.MinItems(1)
+	hostnames?: [...string] & list.MinItems(1)
 	serviceName!: string
 	servicePort!: int
+
+	if type != #TCPRouteType {
+		hostnames!: [...string] & list.MinItems(1)
+	}
 
 	// Allow directly specifying any property of ingress/httproute at spec.
 	spec: {...}
@@ -64,6 +70,17 @@ import (
 						value: "/"
 					}
 				}]
+				backendRefs: [{
+					name: c.serviceName
+					port: c.servicePort
+				}]
+			} & c.ruleSpec]
+		}}
+	}
+
+	if c.type == #TCPRouteType {
+		out: gateway_v1alpha2.#TCPRoute & {spec: {
+			rules: [{
 				backendRefs: [{
 					name: c.serviceName
 					port: c.servicePort
